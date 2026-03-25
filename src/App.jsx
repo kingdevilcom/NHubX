@@ -9,6 +9,7 @@ import About from './pages/About';
 import Projects from './pages/Projects';
 import Developer from './pages/Developer';
 import Contact from './pages/Contact';
+import NotFound from './pages/NotFound';
 
 const PageWrapper = ({ children }) => (
   <motion.div
@@ -32,6 +33,7 @@ const AnimatedRoutes = () => {
         <Route path="/projects" element={<PageWrapper><Projects /></PageWrapper>} />
         <Route path="/developer" element={<PageWrapper><Developer /></PageWrapper>} />
         <Route path="/contact" element={<PageWrapper><Contact /></PageWrapper>} />
+        <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
       </Routes>
     </AnimatePresence>
   );
