@@ -1,0 +1,27 @@
+.text-center {
+  text-align: center;
+}
+
+main {
+  padding-top: 80px; /* Offset for fixed navbar */
+}
+
+/* Custom scrollbar for cyberpunk look */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+  border: 1px solid var(--glass-border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff3c00;
+  box-shadow: 0 0 10px #ff3c00;
+}

@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-nhubx-bg-primary text-white font-sans antialiased overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+  
+  .glass-navbar {
+    @apply bg-nhubx-bg-primary/40 backdrop-blur-2xl border border-white/10 rounded-full;
+  }
+
+  .glow-text-primary {
+    @apply text-nhubx-glow-primary drop-shadow-[0_0_8px_rgba(255,60,0,0.8)];
+  }
+
+  .glow-border {
+    @apply border border-nhubx-glow-primary/50 shadow-glow;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-nhubx-bg-primary;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-nhubx-accent rounded-full border-2 border-nhubx-bg-primary hover:bg-nhubx-glow-primary/50 transition-colors;
+}
