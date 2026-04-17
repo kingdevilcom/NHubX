@@ -23,24 +23,24 @@ const Home = () => {
           <p className="text-lg md:text-2xl text-gray-400 font-medium tracking-wide mb-8 px-4">
             One Hub. <span className="text-white">Infinite Power.</span>
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center px-6">
-            <Button variant="primary" className="w-full sm:w-auto">Explore Projects</Button>
+            <a href="/projects"><Button variant="primary" className="w-full sm:w-auto">Explore Projects</Button></a>
             <Button variant="secondary" className="w-full sm:w-auto">View Docs</Button>
           </div>
         </motion.div>
 
         {/* Floating Background Element */}
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             y: [0, -20, 0],
             rotate: [0, 5, 0]
           }}
           transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           className="absolute right-20 top-1/4 w-64 h-64 glass opacity-20 -z-10 rounded-3xl"
         />
-        <motion.div 
-          animate={{ 
+        <motion.div
+          animate={{
             y: [0, 20, 0],
             rotate: [0, -5, 0]
           }}

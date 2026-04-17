@@ -1,25 +1,35 @@
 import { motion } from 'framer-motion';
 import Card from '../components/Card';
-import { Shield, Lock, Wifi } from 'lucide-react';
+import { Shield, Lock, Wifi, Book } from 'lucide-react';
 
 const projects = [
+  {
+    name: 'Prof Helper',
+    description: 'A Website Develop By NanoKillX.',
+    icon: <Book className="w-10 h-10 text-nhubx-glow-primary" />,
+    status: 'LIVE',
+    link: "https://profhelper.com"
+  },
   {
     name: 'NAuthX',
     description: 'Next-gen 2FA and identity verification platform with biometric support.',
     icon: <Shield className="w-10 h-10 text-nhubx-glow-primary" />,
-    status: 'BETA'
+    status: 'DEV',
+    link: "https://NAuthX.com"
   },
   {
     name: 'NPassX',
     description: 'Zero-knowledge password management for elite security teams.',
     icon: <Lock className="w-10 h-10 text-nhubx-glow-secondary" />,
-    status: 'LIVE'
+    status: 'DEV',
+    link: "https://NPassX.com"
   },
   {
     name: 'NNetX',
     description: 'Decentralized VPN infrastructure with wireguard integration.',
     icon: <Wifi className="w-10 h-10 text-nhubx-glow-primary" />,
-    status: 'DEV'
+    status: 'DEV',
+    link: "https://NNetX.com"
   }
 ];
 
@@ -50,9 +60,9 @@ const Projects = () => {
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               {project.description}
             </p>
-            <button className="text-xs font-bold text-nhubx-glow-primary hover:underline underline-offset-4">
+            <a href={project.link}><button className="text-xs font-bold text-nhubx-glow-primary hover:underline underline-offset-4">
               VIEW DETAILS →
-            </button>
+            </button></a>
           </Card>
         ))}
       </div>

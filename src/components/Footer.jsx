@@ -8,15 +8,15 @@ const Footer = () => {
           <img src="/logo.jpg" alt="Logo" className="w-6 h-6 rounded-full grayscale opacity-50" />
           <span className="text-gray-500 font-bold tracking-tight">NHubX</span>
         </div>
-        
+
         <p className="text-gray-600 text-sm">
           © 2026 <span className="text-nhubx-glow-primary/70">NanoKillX</span> | NHubX Infrastructure
         </p>
-
         <div className="flex items-center gap-6">
-          <a href="#" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Twitter</a>
-          <a href="#" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Github</a>
-          <a href="#" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Discord</a>
+          <a href="https://www.facebook.com/" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Facebook</a>
+          <a href="http://github.com/NanoKillX" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Github</a>
+          <a href="https://www.instagram.com/nanokillx/" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Instagram</a>
+          <a href="https://api.whatsapp.com/send/?phone=94707418010&text&type=phone_number&app_absent=0" className="text-gray-500 hover:text-nhubx-glow-primary transition-colors text-sm">Whatsapp</a>
         </div>
       </div>
     </footer>
