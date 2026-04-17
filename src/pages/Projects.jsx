@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import Card from '../components/Card';
-import { Shield, Lock, Wifi, Book } from 'lucide-react';
+import { Shield, Lock, Wifi, Book, Clock } from 'lucide-react';
 
 const projects = [
   {
@@ -9,6 +9,13 @@ const projects = [
     icon: <Book className="w-10 h-10 text-nhubx-glow-primary" />,
     status: 'LIVE',
     link: "https://profhelper.com"
+  },
+    {
+    name: 'NClockX',
+    description: 'A Clock For Cool Theme Dev By NanoKillX.',
+    icon: <Book className="w-10 h-10 text-nhubx-glow-primary" />,
+    status: 'LIVE',
+    link: "https://clock.nhubx.com/"
   },
   {
     name: 'NAuthX',
