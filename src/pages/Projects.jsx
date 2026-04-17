@@ -13,7 +13,7 @@ const projects = [
     {
     name: 'NClockX',
     description: 'A Clock For Cool Theme Dev By NanoKillX.',
-    icon: <Book className="w-10 h-10 text-nhubx-glow-primary" />,
+    icon: <Clock className="w-10 h-10 text-nhubx-glow-primary" />,
     status: 'LIVE',
     link: "https://clock.nhubx.com/"
   },
