@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ProjectProvider, useProject } from './context/ProjectContext';
+import { AdminProvider } from './context/AdminContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
@@ -11,6 +12,7 @@ import About from './pages/About';
 import Projects from './pages/Projects';
 import Developer from './pages/Developer';
 import Contact from './pages/Contact';
+import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 
 const PageWrapper = ({ children }) => (
@@ -26,6 +28,7 @@ const PageWrapper = ({ children }) => (
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const isAdminRoute = location.pathname === '/admin';
 
   return (
     <AnimatePresence mode="wait">
@@ -35,6 +38,7 @@ const AnimatedRoutes = () => {
         <Route path="/projects" element={<PageWrapper><Projects /></PageWrapper>} />
         <Route path="/developer" element={<PageWrapper><Developer /></PageWrapper>} />
         <Route path="/contact" element={<PageWrapper><Contact /></PageWrapper>} />
+        <Route path="/admin" element={isAdminRoute ? <Admin /> : <PageWrapper><Admin /></PageWrapper>} />
         <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
       </Routes>
     </AnimatePresence>
@@ -44,6 +48,8 @@ const AnimatedRoutes = () => {
 function AppContent() {
   const { isPreviewOpen, previewUrl, closePreview } = useProject();
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const isAdminRoute = location.pathname === '/admin';
 
   return (
     <>
@@ -57,11 +63,11 @@ function AppContent() {
           animate={{ opacity: 1 }}
           className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
         >
-          <Navbar />
+          {!isAdminRoute && <Navbar />}
           <main className="flex-grow">
             <AnimatedRoutes />
           </main>
-          <Footer />
+          {!isAdminRoute && <Footer />}
         </motion.div>
       )}
 
@@ -78,7 +84,9 @@ function App() {
   return (
     <Router>
       <ProjectProvider>
-        <AppContent />
+        <AdminProvider>
+          <AppContent />
+        </AdminProvider>
       </ProjectProvider>
     </Router>
   );
