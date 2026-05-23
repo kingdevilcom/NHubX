@@ -61,13 +61,15 @@ function AppContent() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
+          className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col lg:flex-row"
         >
           {!isAdminRoute && <Navbar />}
-          <main className="flex-grow">
-            <AnimatedRoutes />
-          </main>
-          {!isAdminRoute && <Footer />}
+          <div className="flex flex-col flex-grow lg:ml-64">
+            <main className="flex-grow">
+              <AnimatedRoutes />
+            </main>
+            {!isAdminRoute && <Footer />}
+          </div>
         </motion.div>
       )}
 
