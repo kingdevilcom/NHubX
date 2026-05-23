@@ -5,6 +5,8 @@ export const ProjectContext = createContext();
 export const ProjectProvider = ({ children }) => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const openModal = useCallback((project) => {
     setSelectedProject(project);
@@ -18,8 +20,29 @@ export const ProjectProvider = ({ children }) => {
     document.body.style.overflow = 'unset';
   }, []);
 
+  const openPreview = useCallback((url) => {
+    setPreviewUrl(url);
+    setIsPreviewOpen(true);
+    document.body.style.overflow = 'hidden';
+  }, []);
+
+  const closePreview = useCallback(() => {
+    setIsPreviewOpen(false);
+    setPreviewUrl(null);
+    document.body.style.overflow = 'unset';
+  }, []);
+
   return (
-    <ProjectContext.Provider value={{ selectedProject, isModalOpen, openModal, closeModal }}>
+    <ProjectContext.Provider value={{ 
+      selectedProject, 
+      isModalOpen, 
+      openModal, 
+      closeModal,
+      previewUrl,
+      isPreviewOpen,
+      openPreview,
+      closePreview
+    }}>
       {children}
     </ProjectContext.Provider>
   );

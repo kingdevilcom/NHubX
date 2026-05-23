@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ProjectProvider } from './context/ProjectContext';
+import { ProjectProvider, useProject } from './context/ProjectContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
+import WebPreviewModal from './components/WebPreviewModal';
 import Home from './pages/Home';
 import About from './pages/About';
 import Projects from './pages/Projects';
@@ -40,29 +41,44 @@ const AnimatedRoutes = () => {
   );
 };
 
-function App() {
+function AppContent() {
+  const { isPreviewOpen, previewUrl, closePreview } = useProject();
   const [isLoading, setIsLoading] = useState(true);
 
   return (
+    <>
+      <AnimatePresence mode="wait">
+        {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
+      </AnimatePresence>
+      
+      {!isLoading && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
+        >
+          <Navbar />
+          <main className="flex-grow">
+            <AnimatedRoutes />
+          </main>
+          <Footer />
+        </motion.div>
+      )}
+
+      <WebPreviewModal 
+        isOpen={isPreviewOpen}
+        url={previewUrl}
+        onClose={closePreview}
+      />
+    </>
+  );
+}
+
+function App() {
+  return (
     <Router>
       <ProjectProvider>
-        <AnimatePresence mode="wait">
-          {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
-        </AnimatePresence>
-        
-        {!isLoading && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
-          >
-            <Navbar />
-            <main className="flex-grow">
-              <AnimatedRoutes />
-            </main>
-            <Footer />
-          </motion.div>
-        )}
+        <AppContent />
       </ProjectProvider>
     </Router>
   );

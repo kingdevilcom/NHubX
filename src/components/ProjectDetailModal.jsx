@@ -1,8 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
+import { useProject } from '../context/ProjectContext';
 
 const ProjectDetailModal = ({ isOpen, project, onClose }) => {
+  const { openPreview } = useProject();
+
   return (
     <AnimatePresence>
       {isOpen && project && (
@@ -100,11 +103,20 @@ const ProjectDetailModal = ({ isOpen, project, onClose }) => {
                 )}
 
                 {/* Call to Action */}
-                <a href={project.link} target="_blank" rel="noopener noreferrer">
-                  <button className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 text-white font-bold py-3 rounded-lg transition-all shadow-glow hover:scale-105 active:scale-95">
-                    Visit Project →
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => openPreview(project.link)}
+                    className="flex-1 bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 text-white font-bold py-3 rounded-lg transition-all shadow-glow hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <span>Preview</span>
+                    <ExternalLink size={16} />
                   </button>
-                </a>
+                  <a href={project.link} target="_blank" rel="noopener noreferrer" className="flex-1">
+                    <button className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-3 rounded-lg transition-all hover:scale-105 active:scale-95">
+                      Visit Live
+                    </button>
+                  </a>
+                </div>
               </div>
             </div>
           </motion.div>
