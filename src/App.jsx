@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ProjectProvider, useProject } from './context/ProjectContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
+import WebPreviewModal from './components/WebPreviewModal';
 import Home from './pages/Home';
 import About from './pages/About';
 import Projects from './pages/Projects';
@@ -39,11 +41,12 @@ const AnimatedRoutes = () => {
   );
 };
 
-function App() {
+function AppContent() {
+  const { isPreviewOpen, previewUrl, closePreview } = useProject();
   const [isLoading, setIsLoading] = useState(true);
 
   return (
-    <Router>
+    <>
       <AnimatePresence mode="wait">
         {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
       </AnimatePresence>
@@ -61,6 +64,22 @@ function App() {
           <Footer />
         </motion.div>
       )}
+
+      <WebPreviewModal 
+        isOpen={isPreviewOpen}
+        url={previewUrl}
+        onClose={closePreview}
+      />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <ProjectProvider>
+        <AppContent />
+      </ProjectProvider>
     </Router>
   );
 }
