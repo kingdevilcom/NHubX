@@ -23,8 +23,8 @@ const Navbar = () => {
     >
       <div className="glass-navbar px-4 md:px-6 py-2 md:py-3 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-2 md:gap-3 group shrink-0">
-          <img src="/logo.jpg" alt="NHubX Logo" className="w-8 h-8 rounded-full shadow-glow group-hover:animate-glow-pulse" />
-          <div className="flex flex-col">
+          <img src="/NHubX2.0.png" alt="NHubX Logo" className="w-10 h-10 md:w-12 md:h-12 shadow-glow group-hover:animate-glow-pulse" />
+          <div className="hidden sm:flex flex-col">
             <span className="font-bold text-lg md:text-xl tracking-tighter glow-text-primary leading-none">NHubX</span>
             <DigitalClock />
           </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ProjectProvider } from './context/ProjectContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
@@ -44,23 +45,25 @@ function App() {
 
   return (
     <Router>
-      <AnimatePresence mode="wait">
-        {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
-      </AnimatePresence>
-      
-      {!isLoading && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
-        >
-          <Navbar />
-          <main className="flex-grow">
-            <AnimatedRoutes />
-          </main>
-          <Footer />
-        </motion.div>
-      )}
+      <ProjectProvider>
+        <AnimatePresence mode="wait">
+          {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
+        </AnimatePresence>
+        
+        {!isLoading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
+          >
+            <Navbar />
+            <main className="flex-grow">
+              <AnimatedRoutes />
+            </main>
+            <Footer />
+          </motion.div>
+        )}
+      </ProjectProvider>
     </Router>
   );
 }
