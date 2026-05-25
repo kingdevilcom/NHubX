@@ -3,6 +3,17 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Button from '../components/Button';
 
+const Projects = () => {
+
+  useEffect(() => {
+    document.title = "NHubX | Modern Digital Solutions";
+  }, []);
+
+  const { openModal } = useProject();
+
+  ...
+}
+
 const Home = () => {
   // Stagger variants for the hero contents
   const containerVariants = {
