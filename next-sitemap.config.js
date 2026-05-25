@@ -1,4 +1,4 @@
 module.exports = {
-  siteUrl: 'https://www.nhubx.com',
+  siteUrl: 'https://nhubx.com',
   generateRobotsTxt: true,
 }
