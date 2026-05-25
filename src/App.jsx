@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import {
   BrowserRouter as Router,
   Routes,
@@ -16,6 +17,7 @@ import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
 import WebPreviewModal from './components/WebPreviewModal';
 import FireParticles from './components/FireParticles';
+import ScrollToTop from './components/ScrollToTop';
 
 import Home from './pages/Home';
 import About from './pages/About';
@@ -27,14 +29,13 @@ import NotFound from './pages/NotFound';
 
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
-import ScrollToTop from './components/ScrollToTop';
 
 const PageWrapper = ({ children }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.98 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0, scale: 1.02 }}
-    transition={{ duration: 0.3 }}
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.25 }}
   >
     {children}
   </motion.div>
@@ -42,11 +43,15 @@ const PageWrapper = ({ children }) => (
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+
   const isAdminRoute = location.pathname === '/admin';
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes
+        location={location}
+        key={location.pathname}
+      >
 
         <Route
           path="/"
@@ -132,27 +137,34 @@ const AnimatedRoutes = () => {
             </PageWrapper>
           }
         />
+
       </Routes>
     </AnimatePresence>
   );
 };
 
 function AppContent() {
-  const { isPreviewOpen, previewUrl, closePreview } =
-    useProject();
+  const {
+    isPreviewOpen,
+    previewUrl,
+    closePreview,
+  } = useProject();
 
   const [isLoading, setIsLoading] = useState(true);
 
   const location = useLocation();
 
-  const isAdminRoute = location.pathname === '/admin';
+  const isAdminRoute =
+    location.pathname === '/admin';
 
   return (
     <>
       <AnimatePresence mode="wait">
         {isLoading && (
           <LoadingScreen
-            onComplete={() => setIsLoading(false)}
+            onComplete={() =>
+              setIsLoading(false)
+            }
           />
         )}
       </AnimatePresence>
@@ -163,6 +175,7 @@ function AppContent() {
           animate={{ opacity: 1 }}
           className="min-h-screen text-white flex flex-col"
         >
+
           <FireParticles zIndex={1} />
 
           {!isAdminRoute && <Navbar />}
@@ -172,6 +185,7 @@ function AppContent() {
           </main>
 
           {!isAdminRoute && <Footer />}
+
         </motion.div>
       )}
 
@@ -187,11 +201,18 @@ function AppContent() {
 function App() {
   return (
     <Router>
+
+      {/* auto scroll top */}
+      <ScrollToTop />
+
       <ProjectProvider>
         <AdminProvider>
+
           <AppContent />
+
         </AdminProvider>
       </ProjectProvider>
+
     </Router>
   );
 }
