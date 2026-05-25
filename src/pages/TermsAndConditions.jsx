@@ -1,5 +1,11 @@
+import { useEffect } from 'react';
 
 const TermsAndConditions = () => {
+
+  useEffect(() => {
+    document.title = "Terms & Conditions | NHubX";
+  }, []);
+
   return (
     <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
 
@@ -22,8 +28,9 @@ const TermsAndConditions = () => {
 
           <p className="text-gray-500 text-sm sm:text-base md:text-lg leading-relaxed">
             These Terms & Conditions govern the use of the NHubX
-            platform, services, infrastructure, and digital systems.
+            platform, services, systems, and digital infrastructure.
           </p>
+
         </div>
 
         {/* content */}
@@ -31,132 +38,144 @@ const TermsAndConditions = () => {
 
           {/* acceptance */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Acceptance of Terms
             </h2>
 
             <p className="text-gray-500 leading-8">
               By accessing or using NHubX services, you agree
-              to comply with these Terms & Conditions. If you
-              do not agree with any part of these terms,
-              please discontinue use of the platform.
+              to comply with these Terms & Conditions.
+              If you do not agree with any part of these terms,
+              please discontinue use of the platform immediately.
             </p>
+
           </section>
 
           {/* services */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Services
             </h2>
 
             <p className="text-gray-500 leading-8">
-              NHubX provides digital infrastructure,
-              cybersecurity solutions, automation systems,
-              AI-powered platforms, web development services,
-              and related technologies.
+              NHubX provides web development, cybersecurity solutions,
+              automation systems, AI-powered tools, dashboards,
+              hosting infrastructure, and related digital services.
             </p>
+
           </section>
 
-          {/* user responsibilities */}
+          {/* responsibilities */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               User Responsibilities
             </h2>
 
             <div className="space-y-3 text-gray-500 leading-8">
-              <p>• Use the platform legally and responsibly</p>
-              <p>• Avoid malicious, abusive, or harmful activity</p>
-              <p>• Respect infrastructure and service integrity</p>
-              <p>• Maintain the confidentiality of account credentials</p>
+              <p>• Use services legally and responsibly</p>
+              <p>• Avoid harmful or malicious activity</p>
+              <p>• Protect account credentials and access</p>
+              <p>• Respect infrastructure stability and security</p>
             </div>
+
           </section>
 
           {/* prohibited */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Prohibited Activities
             </h2>
 
             <div className="space-y-3 text-gray-500 leading-8">
-              <p>• Unauthorized access or exploitation attempts</p>
-              <p>• Distribution of malware or harmful software</p>
-              <p>• Abuse of infrastructure or network systems</p>
-              <p>• Illegal activities using NHubX services</p>
+              <p>• Unauthorized access attempts</p>
+              <p>• Malware distribution or exploitation</p>
+              <p>• Infrastructure abuse or spam activity</p>
+              <p>• Illegal usage of NHubX systems or services</p>
             </div>
+
           </section>
 
           {/* intellectual */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Intellectual Property
             </h2>
 
             <p className="text-gray-500 leading-8">
-              All branding, systems, designs, source code,
-              graphics, and platform materials associated
-              with NHubX remain protected intellectual
-              property unless otherwise stated.
+              All branding, visuals, source code, systems,
+              interfaces, and technologies related to NHubX
+              remain protected intellectual property unless stated otherwise.
             </p>
+
           </section>
 
           {/* availability */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Service Availability
             </h2>
 
             <p className="text-gray-500 leading-8">
-              While we aim for maximum uptime and reliability,
-              NHubX does not guarantee uninterrupted access.
-              Services may be updated, modified, or temporarily
-              unavailable during maintenance or upgrades.
+              We aim to provide reliable uptime and performance,
+              but services may occasionally be interrupted during
+              maintenance, upgrades, or unforeseen technical issues.
             </p>
+
           </section>
 
           {/* limitation */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Limitation of Liability
             </h2>
 
             <p className="text-gray-500 leading-8">
-              NHubX shall not be held liable for indirect,
+              NHubX is not responsible for indirect,
               incidental, or consequential damages resulting
-              from the use or inability to use our services,
-              infrastructure, or digital systems.
+              from the use or inability to use our services.
             </p>
+
           </section>
 
           {/* termination */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Termination
             </h2>
 
             <p className="text-gray-500 leading-8">
-              NHubX reserves the right to suspend or terminate
-              access to services if users violate these terms,
-              compromise security, or engage in prohibited
-              activities.
+              We reserve the right to suspend or terminate access
+              to users who violate these Terms & Conditions
+              or compromise platform security.
             </p>
+
           </section>
 
           {/* updates */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Updates to Terms
             </h2>
 
             <p className="text-gray-500 leading-8">
-              These Terms & Conditions may be updated or
-              revised at any time to reflect changes in
-              services, infrastructure, security practices,
-              or legal requirements.
+              These terms may be updated periodically to reflect
+              legal, technical, or operational changes within NHubX services.
             </p>
+
           </section>
 
           {/* contact */}
           <section className="space-y-4">
+
             <h2 className="text-2xl font-bold text-white">
               Contact Information
             </h2>
@@ -166,9 +185,11 @@ const TermsAndConditions = () => {
               <p>Website: https://www.nhubx.com</p>
               <p>Location: Sri Lanka</p>
             </div>
+
           </section>
 
         </div>
+
       </div>
     </div>
   );
