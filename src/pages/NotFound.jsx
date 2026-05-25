@@ -2,6 +2,17 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 
+const Projects = () => {
+
+  useEffect(() => {
+    document.title = "404 | NHubX";
+  }, []);
+
+  const { openModal } = useProject();
+
+  ...
+}
+
 const NotFound = () => {
   return (
     <div className="h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
