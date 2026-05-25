@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Button from '../components/Button';
 
-const Projects = () => {
+const NotFound = () => {
 
   useEffect(() => {
     document.title = "404 | NHubX";
