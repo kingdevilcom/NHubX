@@ -5,14 +5,18 @@ import sitemap from 'vite-plugin-sitemap'
 export default defineConfig({
   plugins: [
     react(),
+
     sitemap({
       hostname: 'https://www.nhubx.com',
+
       dynamicRoutes: [
         '/',
         '/about',
         '/projects',
         '/developer',
         '/contact',
+        '/privacy-policy',
+        '/terms-and-conditions',
       ],
     }),
   ],
