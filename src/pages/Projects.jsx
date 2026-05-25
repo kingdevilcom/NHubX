@@ -35,6 +35,17 @@ export const getProjectIcon = (name, iconName) => {
   return iconMap.cpu;
 };
 
+const Projects = () => {
+
+  useEffect(() => {
+    document.title = "Projects | NHubX";
+  }, []);
+
+  const { openModal } = useProject();
+
+  ...
+}
+
 const defaultProjects = [
   {
     id: 'profhelper',
