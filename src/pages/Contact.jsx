@@ -154,7 +154,7 @@ const Contact = () => {
             <Mail size={16} className="text-nhubx-glow-primary" />
             <div>
               <p className="text-[10px] text-gray-600 uppercase font-mono tracking-wider">Direct Endpoint</p>
-              <p className="text-gray-400 font-semibold mt-0.5">contact@nhubx.io</p>
+              <p className="text-gray-400 font-semibold mt-0.5">contact@nhubx.com</p>
             </div>
           </div>
           
