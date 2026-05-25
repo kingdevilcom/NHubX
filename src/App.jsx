@@ -14,6 +14,7 @@ import Developer from './pages/Developer';
 import Contact from './pages/Contact';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
+import FireParticles from './components/FireParticles';
 
 const PageWrapper = ({ children }) => (
   <motion.div
@@ -61,10 +62,11 @@ function AppContent() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="min-h-screen bg-nhubx-bg-primary text-white flex flex-col"
+          className="min-h-screen text-white flex flex-col"
         >
+          <FireParticles zIndex={1} />
           {!isAdminRoute && <Navbar />}
-          <main className="flex-grow">
+          <main className="flex-grow relative z-10">
             <AnimatedRoutes />
           </main>
           {!isAdminRoute && <Footer />}

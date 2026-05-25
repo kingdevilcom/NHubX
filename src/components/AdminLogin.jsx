@@ -28,7 +28,7 @@ const AdminLogin = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-nhubx-bg-primary flex items-center justify-center px-4 pt-32">
+    <div className="min-h-screen flex items-center justify-center px-4 pt-32">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -97,9 +97,11 @@ const AdminLogin = ({ onLoginSuccess }) => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isLoading || !password}
-              className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-glow hover:scale-105 active:scale-95"
+              className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-glow active:scale-95"
             >
               {isLoading ? 'Verifying...' : 'Login'}
             </motion.button>

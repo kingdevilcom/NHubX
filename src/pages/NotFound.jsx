@@ -4,7 +4,7 @@ import Button from '../components/Button';
 
 const NotFound = () => {
   return (
-    <div className="h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden bg-nhubx-bg-primary">
+    <div className="h-screen flex flex-col items-center justify-center px-6 text-center relative overflow-hidden">
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}

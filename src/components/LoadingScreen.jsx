@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import FireParticles from './FireParticles';
 
 const LoadingScreen = ({ onComplete }) => {
   const [percent, setPercent] = useState(0);
@@ -24,7 +25,8 @@ const LoadingScreen = ({ onComplete }) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[9999] bg-nhubx-bg-primary flex flex-col items-center justify-center"
     >
-      <div className="relative">
+      <FireParticles zIndex={1} />
+      <div className="relative z-10">
         <motion.h1 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}

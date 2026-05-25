@@ -1,29 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, BarChart3, Settings, Layers } from 'lucide-react';
+import { LogOut, BarChart3, Settings, Layers, Mail } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
 import AdminAnalytics from '../components/AdminAnalytics';
 import AdminProjectManager from '../components/AdminProjectManager';
 import AdminContentEditor from '../components/AdminContentEditor';
+import AdminMessages from '../components/AdminMessages';
+import { fetchProjects } from '../firebase';
 
 const Admin = () => {
   const { isAuthenticated, logout } = useAdmin();
   const [activeTab, setActiveTab] = useState('analytics');
   const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
-  // Load projects from localStorage on mount
+  // Load projects from Firestore on mount
   useEffect(() => {
-    const savedProjects = localStorage.getItem('portfolioProjects');
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
-    }
-  }, []);
-
-  // Save projects to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('portfolioProjects', JSON.stringify(projects));
-  }, [projects]);
+    if (!isAuthenticated) return;
+    
+    const loadProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        const data = await fetchProjects();
+        setProjects(data);
+      } catch (error) {
+        console.error("Failed to load projects from Firestore in Admin:", error);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+    loadProjects();
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <AdminLogin onLoginSuccess={() => setActiveTab('analytics')} />;
@@ -32,11 +40,12 @@ const Admin = () => {
   const tabs = [
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'projects', label: 'Projects', icon: Layers },
+    { id: 'messages', label: 'Messages', icon: Mail },
     { id: 'content', label: 'Content', icon: Settings }
   ];
 
   return (
-    <div className="min-h-screen bg-nhubx-bg-primary text-white pt-32 pb-20">
+    <div className="min-h-screen text-white pt-32 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -48,7 +57,7 @@ const Admin = () => {
             <h1 className="text-4xl md:text-5xl font-black mb-2">
               Admin <span className="glow-text-primary">Dashboard</span>
             </h1>
-            <p className="text-gray-400">Manage your portfolio, projects, and content</p>
+            <p className="text-gray-400">Manage your portfolio, projects, and secure submissions</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -65,7 +74,7 @@ const Admin = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid sm:grid-cols-3 gap-3 mb-8"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
         >
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -101,8 +110,15 @@ const Admin = () => {
           >
             {activeTab === 'analytics' && <AdminAnalytics />}
             {activeTab === 'projects' && (
-              <AdminProjectManager projects={projects} setProjects={setProjects} />
+              loadingProjects ? (
+                <div className="text-center py-12 text-gray-400 font-mono">
+                  Loading project records...
+                </div>
+              ) : (
+                <AdminProjectManager projects={projects} setProjects={setProjects} />
+              )
             )}
+            {activeTab === 'messages' && <AdminMessages />}
             {activeTab === 'content' && <AdminContentEditor />}
           </motion.div>
         </AnimatePresence>

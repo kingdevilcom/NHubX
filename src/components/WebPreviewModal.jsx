@@ -22,7 +22,7 @@ const WebPreviewModal = ({ isOpen, url, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
           />
 
           {/* Modal */}
@@ -31,14 +31,14 @@ const WebPreviewModal = ({ isOpen, url, onClose }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className={`fixed z-50 rounded-2xl border border-white/20 shadow-2xl overflow-hidden flex flex-col ${
+            className={`fixed z-[210] rounded-2xl border border-white/[0.06] shadow-2xl bg-black/60 backdrop-blur-xl overflow-hidden flex flex-col ${
               isMaximized 
                 ? 'inset-0 m-4 md:m-6' 
                 : 'inset-4 md:inset-8 lg:inset-20'
             }`}
           >
             {/* Header */}
-            <div className="glass-panel bg-black/40 border-b border-white/10 px-4 md:px-6 py-3 flex items-center justify-between shrink-0">
+            <div className="bg-white/[0.01] backdrop-blur-md border-b border-white/[0.06] px-4 md:px-6 py-3 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <span className="text-sm font-semibold text-gray-300 truncate">{url}</span>
               </div>

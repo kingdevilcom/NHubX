@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
+import { saveProject, deleteProject } from '../firebase';
 
 const AdminProjectManager = ({ projects, setProjects }) => {
   const [isAddingProject, setIsAddingProject] = useState(false);
@@ -12,34 +13,67 @@ const AdminProjectManager = ({ projects, setProjects }) => {
     status: 'DEV',
     type: 'personal',
     link: '',
+    iconName: '',
     features: [],
     technologies: []
   });
   const [featureInput, setFeatureInput] = useState('');
   const [techInput, setTechInput] = useState('');
 
-  const handleAddProject = () => {
+  const handleAddProject = async () => {
     if (formData.name && formData.description) {
-      const newProject = {
-        ...formData,
-        id: Date.now()
-      };
-      setProjects([...projects, newProject]);
-      resetForm();
+      try {
+        const id = await saveProject(formData);
+        const newProject = {
+          ...formData,
+          id
+        };
+        setProjects([...projects, newProject]);
+        resetForm();
+      } catch (error) {
+        console.error("Error saving new project:", error);
+        alert("Failed to save project: " + error.message);
+      }
     }
   };
 
-  const handleUpdateProject = (id) => {
-    setProjects(projects.map(p => p.id === id ? formData : p));
-    resetForm();
+  const handleUpdateProject = async (id) => {
+    if (formData.name && formData.description) {
+      try {
+        await saveProject({ ...formData, id });
+        setProjects(projects.map(p => p.id === id ? { ...formData, id } : p));
+        resetForm();
+      } catch (error) {
+        console.error("Error updating project:", error);
+        alert("Failed to update project: " + error.message);
+      }
+    }
   };
 
-  const handleDeleteProject = (id) => {
-    setProjects(projects.filter(p => p.id !== id));
+  const handleDeleteProject = async (id) => {
+    if (window.confirm("Are you sure you want to delete this project?")) {
+      try {
+        await deleteProject(id);
+        setProjects(projects.filter(p => p.id !== id));
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        alert("Failed to delete project: " + error.message);
+      }
+    }
   };
 
   const handleEditProject = (project) => {
-    setFormData(project);
+    setFormData({
+      name: project.name || '',
+      description: project.description || '',
+      fullDescription: project.fullDescription || '',
+      status: project.status || 'DEV',
+      type: project.type || 'personal',
+      link: project.link || '',
+      iconName: project.iconName || '',
+      features: project.features || [],
+      technologies: project.technologies || []
+    });
     setEditingId(project.id);
     setIsAddingProject(true);
   };
@@ -52,6 +86,7 @@ const AdminProjectManager = ({ projects, setProjects }) => {
       status: 'DEV',
       type: 'personal',
       link: '',
+      iconName: '',
       features: [],
       technologies: []
     });
@@ -137,7 +172,7 @@ const AdminProjectManager = ({ projects, setProjects }) => {
                 />
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-3 gap-4">
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -153,6 +188,19 @@ const AdminProjectManager = ({ projects, setProjects }) => {
                 >
                   <option value="personal">Personal</option>
                   <option value="client">Client</option>
+                </select>
+                <select
+                  value={formData.iconName}
+                  onChange={(e) => setFormData({ ...formData, iconName: e.target.value })}
+                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-nhubx-glow-primary/50"
+                >
+                  <option value="">Auto-Guess Icon</option>
+                  <option value="Book">Book Icon</option>
+                  <option value="Clock">Clock Icon</option>
+                  <option value="Shield">Shield Icon</option>
+                  <option value="Lock">Lock Icon</option>
+                  <option value="Wifi">Wifi Icon</option>
+                  <option value="Cpu">Cpu Icon</option>
                 </select>
               </div>
 

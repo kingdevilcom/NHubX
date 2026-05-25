@@ -1,44 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  html {
+    background-color: #000000;
+  }
+
   body {
-    @apply bg-nhubx-bg-primary text-white font-sans antialiased overflow-x-hidden;
+    min-height: 100vh;
+    background-color: #0a0a0a;
+    /* Centered orange radial gradient matching the loading screen background exactly */
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 60, 0, 0.05) 0%,
+      transparent 70%
+    );
+    background-attachment: fixed;
+    @apply text-white font-sans antialiased overflow-x-hidden;
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: -0.01em;
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.06] rounded-xl;
+  }
+  
+  .glass-panel {
+    @apply bg-black/40 backdrop-blur-3xl border border-white/[0.06] rounded-2xl shadow-2xl;
+  }
+  
+  .glass-card {
+    @apply bg-white/[0.02] hover:bg-white/[0.04] backdrop-blur-xl border border-white/[0.06] hover:border-nhubx-glow-primary/25 rounded-xl transition-all duration-300 shadow-md;
   }
   
   .glass-navbar {
-    @apply bg-nhubx-bg-primary/30 backdrop-blur-3xl border border-white/15 rounded-2xl;
+    @apply bg-black/30 backdrop-blur-3xl border border-white/[0.08] rounded-xl;
   }
 
   .glow-text-primary {
-    @apply text-nhubx-glow-primary drop-shadow-[0_0_8px_rgba(255,60,0,0.8)];
+    @apply text-nhubx-glow-primary drop-shadow-[0_0_10px_rgba(255,60,0,0.5)];
+  }
+  
+  .glow-text-secondary {
+    @apply text-nhubx-glow-secondary drop-shadow-[0_0_8px_rgba(255,122,0,0.35)];
   }
 
   .glow-border {
-    @apply border border-nhubx-glow-primary/50 shadow-glow;
+    @apply border border-nhubx-glow-primary/30 shadow-glow;
   }
 
   .shadow-glow {
-    @apply shadow-[0_0_20px_rgba(255,60,0,0.5)];
+    @apply shadow-[0_0_20px_rgba(255,60,0,0.18)];
+  }
+  
+  .shadow-glow-lg {
+    @apply shadow-[0_0_35px_rgba(255,60,0,0.28)];
   }
 }
 
-/* Custom scrollbar */
+/* Custom premium scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-nhubx-bg-primary;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-nhubx-accent rounded-full border-2 border-nhubx-bg-primary hover:bg-nhubx-glow-primary/50 transition-colors;
+  @apply bg-white/[0.06] rounded-none hover:bg-[#ff3c00]/40 transition-colors duration-300;
 }

@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Projects collection: anyone can read; anyone can write for now (dashboard password validation is handled client-side)
+    match /projects/{project} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Messages collection: anyone can submit (create) a message; anyone can read or delete them
+    match /messages/{message} {
+      allow create: if true;
+      allow read, delete: if true;
+    }
+  }
+}
