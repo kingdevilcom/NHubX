@@ -5,10 +5,22 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    const smoothScroll = () => {
+      const currentScroll =
+        document.documentElement.scrollTop ||
+        document.body.scrollTop;
+
+      if (currentScroll > 0) {
+        window.requestAnimationFrame(smoothScroll);
+
+        window.scrollTo(
+          0,
+          currentScroll - currentScroll / 12
+        );
+      }
+    };
+
+    smoothScroll();
   }, [pathname]);
 
   return null;
