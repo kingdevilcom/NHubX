@@ -1,0 +1,57 @@
+{
+  "background_color": "#ffffff",
+  "description": "NHubX builds modern websites, apps, cybersecurity systems, AI tools, automation platforms, and digital experiences.",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "NHubX",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "NHubX",
+  "start_url": "/",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://nhubx.com/NHubX2.0.png",
+      "type": "image/png",
+      "isSquare": false,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 0,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    },
+    {
+      "src": "https://www.nhubx.com/NHubX2.0.png",
+      "isSquare": false,
+      "isPng": true,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 0,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    },
+    {
+      "src": "https://nhubx.com/favicon.ico",
+      "type": "image/x-icon",
+      "isSquare": false,
+      "isPng": false,
+      "isWebp": false,
+      "isJpg": false,
+      "width": 0,
+      "is512x512": false,
+      "is256x256": false,
+      "is192x192": false
+    }
+  ],
+  "id": "NHUBX",
+  "categories": [
+    "design",
+    "developer",
+    "graphics",
+    "productivity",
+    "social"
+  ]
+}
