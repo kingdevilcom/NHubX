@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Cpu } from 'lucide-react';
+import { useProject } from '../context/ProjectContext';
 
 const ProjectDetailModal = ({ isOpen, project, onClose }) => {
+  const { openPreview } = useProject();
   return (
     <AnimatePresence>
       {isOpen && project && (
@@ -108,20 +110,26 @@ const ProjectDetailModal = ({ isOpen, project, onClose }) => {
                 )}
 
                 {/* Call to Action */}
-                <div className="pt-4 border-t border-white/[0.03]">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-white/[0.03]">
+                  <motion.button
+                    onClick={() => openPreview(project.link)}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex-1 bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white font-bold py-3 rounded-lg transition-all shadow-glow text-[10px] uppercase tracking-wider flex items-center justify-center gap-2"
+                  >
+                    Preview on NHubX
+                    <ExternalLink size={12} />
+                  </motion.button>
                   <a href={project.link} target="_blank" rel="noopener noreferrer" className="block">
                     <motion.button 
                       whileHover={{ scale: 1.06 }}
                       whileTap={{ scale: 0.98 }}
-                      className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white font-bold py-3 rounded-lg transition-all shadow-glow active:scale-98 text-[10px] uppercase tracking-wider flex items-center justify-center gap-2"
+                      className="w-full bg-white/[0.02] hover:bg-white/[0.06] border border-white/10 text-white font-bold py-3 px-5 rounded-lg transition-all active:scale-98 text-[10px] uppercase tracking-wider flex items-center justify-center gap-2"
                     >
                       Open Live Project
                       <ExternalLink size={12} />
                     </motion.button>
                   </a>
-                  <p className="text-center text-[10px] text-gray-600 mt-2">
-                    Opens in a new tab because some sites block embedded previews.
-                  </p>
                 </div>
               </div>
 

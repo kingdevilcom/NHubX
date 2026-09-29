@@ -9,7 +9,7 @@ import {
 
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { ProjectProvider } from './context/ProjectContext';
+import { ProjectProvider, useProject } from './context/ProjectContext';
 import { AdminProvider } from './context/AdminContext';
 import { ContentProvider } from './context/ContentContext';
 import { trackPageView } from './firebase';
@@ -17,6 +17,7 @@ import { trackPageView } from './firebase';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
+import WebPreviewModal from './components/WebPreviewModal';
 import FireParticles from './components/FireParticles';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -145,6 +146,7 @@ const AnimatedRoutes = () => {
 };
 
 function AppContent() {
+  const { isPreviewOpen, previewUrl, closePreview } = useProject();
   const [isLoading, setIsLoading] = useState(true);
 
   const location = useLocation();
@@ -191,6 +193,8 @@ function AppContent() {
 
         </motion.div>
       )}
+
+      <WebPreviewModal isOpen={isPreviewOpen} url={previewUrl} onClose={closePreview} />
 
     </>
   );
