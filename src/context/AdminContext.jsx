@@ -1,4 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
+
+const ADMIN_EMAIL = 'stharunindu@gmail.com';
 
 const AdminContext = createContext();
 
@@ -12,42 +16,49 @@ export const useAdmin = () => {
 
 export const AdminProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('nhubx@admin123');
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // Check authentication on mount
   useEffect(() => {
-    const adminToken = localStorage.getItem('adminToken');
-    if (adminToken && adminToken === adminPassword) {
-      setIsAuthenticated(true);
-    }
-  }, [adminPassword]);
+    return onAuthStateChanged(auth, async (firebaseUser) => {
+      const isAdmin = firebaseUser?.email?.toLowerCase() === ADMIN_EMAIL;
 
-  const login = useCallback((password) => {
-    if (password === adminPassword) {
-      localStorage.setItem('adminToken', password);
-      setIsAuthenticated(true);
-      return true;
-    }
-    return false;
-  }, [adminPassword]);
+      if (firebaseUser && !isAdmin) {
+        await signOut(auth);
+        setUser(null);
+        setIsAuthenticated(false);
+      } else {
+        setUser(firebaseUser);
+        setIsAuthenticated(Boolean(isAdmin));
+      }
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('adminToken');
-    setIsAuthenticated(false);
+      setIsAuthLoading(false);
+    });
   }, []);
 
-  const changePassword = useCallback((newPassword) => {
-    setAdminPassword(newPassword);
-    localStorage.setItem('adminToken', newPassword);
+  const loginWithGoogle = useCallback(async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    const email = result.user.email?.toLowerCase();
+
+    if (email !== ADMIN_EMAIL) {
+      await signOut(auth);
+      throw new Error('This Google account is not authorized.');
+    }
+
+    return result.user;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await signOut(auth);
   }, []);
 
   return (
     <AdminContext.Provider value={{ 
       isAuthenticated, 
-      login, 
+      loginWithGoogle,
       logout, 
-      changePassword,
-      adminPassword
+      isAuthLoading,
+      user
     }}>
       {children}
     </AdminContext.Provider>

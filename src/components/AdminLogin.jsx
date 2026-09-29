@@ -1,30 +1,27 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
 const AdminLogin = ({ onLoginSuccess }) => {
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAdmin();
+  const { loginWithGoogle, isAuthLoading } = useAdmin();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     setIsLoading(true);
     setError('');
 
-    setTimeout(() => {
-      if (login(password)) {
-        setPassword('');
-        onLoginSuccess();
-      } else {
-        setError('Invalid password. Please try again.');
-        setPassword('');
+    try {
+      await loginWithGoogle();
+      onLoginSuccess();
+    } catch (loginError) {
+      if (loginError.code !== 'auth/popup-closed-by-user') {
+        setError(loginError.message || 'Unable to sign in with Google.');
       }
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -48,38 +45,11 @@ const AdminLogin = ({ onLoginSuccess }) => {
               </div>
             </motion.div>
             <h1 className="text-3xl font-bold mb-2 glow-text-primary">Admin Panel</h1>
-            <p className="text-gray-400 text-sm">Enter your password to continue</p>
+            <p className="text-gray-400 text-sm">Sign in with the authorized Google account</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="relative"
-            >
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Admin Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-nhubx-glow-primary/50 focus:ring-1 focus:ring-nhubx-glow-primary/30 transition-all"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-nhubx-glow-primary transition-colors"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </motion.div>
+          <div className="space-y-6">
 
             {/* Error Message */}
             {error && (
@@ -99,13 +69,14 @@ const AdminLogin = ({ onLoginSuccess }) => {
               transition={{ delay: 0.3 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={isLoading || !password}
+              type="button"
+              onClick={handleLogin}
+              disabled={isLoading || isAuthLoading}
               className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-glow active:scale-95"
             >
-              {isLoading ? 'Verifying...' : 'Login'}
+              {isLoading || isAuthLoading ? 'Signing in...' : 'Continue with Google'}
             </motion.button>
-          </form>
+          </div>
 
           {/* Footer */}
           <p className="text-center text-gray-500 text-xs mt-6">
