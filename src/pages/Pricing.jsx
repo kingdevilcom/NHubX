@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronRight, Database, Globe2, Loader2, Send, Server, X } from 'lucide-react';
+import { getCountries, getCountryCallingCode } from 'libphonenumber-js/min';
 import { saveMessage } from '../firebase';
 
 const plans = [
@@ -27,11 +28,41 @@ const addons = [
 
 const Pricing = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [form, setForm] = useState({ name: '', whatsapp: '', email: '', details: '' });
+  const [form, setForm] = useState({ name: '', country: 'LK', whatsapp: '', email: '', details: '' });
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
 
   useEffect(() => { document.title = 'Pricing | NHubX'; }, []);
+
+  const countryOptions = useMemo(() => {
+    const names = new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' });
+    return getCountries()
+      .map((country) => ({ country, name: names.of(country) || country, dialCode: getCountryCallingCode(country) }))
+      .sort((first, second) => first.name.localeCompare(second.name));
+  }, []);
+
+  useEffect(() => {
+    const selectDetectedCountry = async () => {
+      let detectedCountry = null;
+      try {
+        const response = await fetch('/api/country');
+        if (response.ok) detectedCountry = (await response.json()).country;
+      } catch {
+        // Local development and non-Vercel hosting use the browser locale fallback.
+      }
+
+      if (!detectedCountry) {
+        const localeParts = (navigator.language || '').split('-');
+        detectedCountry = localeParts.length > 1 ? localeParts.at(-1).toUpperCase() : null;
+      }
+
+      if (detectedCountry && getCountries().includes(detectedCountry)) {
+        setForm((current) => ({ ...current, country: detectedCountry }));
+      }
+    };
+
+    selectDetectedCountry();
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = selectedPlan ? 'hidden' : 'unset';
@@ -57,14 +88,14 @@ const Pricing = () => {
       `Pricing plan enquiry: ${selectedPlan.name}`,
       `Development price: LKR ${selectedPlan.price}`,
       `Hosting: ${selectedPlan.hosting}`,
-      `WhatsApp: ${form.whatsapp}`,
+      `WhatsApp: +${getCountryCallingCode(form.country)} ${form.whatsapp}`,
       form.details ? `Project details: ${form.details}` : 'Project details: Not provided'
     ].join('\n');
 
     try {
       await saveMessage(form.name.trim(), form.email.trim(), enquiry);
       setStatus('success');
-      setForm({ name: '', whatsapp: '', email: '', details: '' });
+      setForm((current) => ({ name: '', country: current.country, whatsapp: '', email: '', details: '' }));
     } catch (submitError) {
       console.error('Unable to submit plan enquiry:', submitError);
       setError('Your enquiry could not be sent. Please try again.');
@@ -123,7 +154,7 @@ const Pricing = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Your name</span><input required maxLength="80" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Enter your name" className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
                 <div className="grid sm:grid-cols-2 gap-5">
-                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">WhatsApp number</span><input required type="tel" maxLength="20" autoComplete="tel" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} placeholder="+94 7X XXX XXXX" pattern="[+0-9 ()-]{7,20}" className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
+                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">WhatsApp number</span><div className="flex rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-nhubx-glow-primary/60"><select aria-label="Country calling code" value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} className="max-w-[8.5rem] sm:max-w-[9.5rem] border-r border-white/10 bg-[#101010] px-3 text-xs text-gray-300 outline-none rounded-l-xl">{countryOptions.map(({ country, name, dialCode }) => <option key={country} value={country}>{name} (+{dialCode})</option>)}</select><input required type="tel" inputMode="tel" maxLength="20" autoComplete="tel-national" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} placeholder="7X XXX XXXX" pattern="[0-9 ()-]{6,20}" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-white placeholder-gray-600 outline-none" /></div></label>
                   <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Email address</span><input required type="email" maxLength="120" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@example.com" className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
                 </div>
                 <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Project details <span className="text-gray-600">(optional)</span></span><textarea rows="4" maxLength="1000" value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder="Tell us what you want to build..." className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
