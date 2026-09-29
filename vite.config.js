@@ -13,6 +13,7 @@ export default defineConfig({
         '/',
         '/about',
         '/projects',
+        '/pricing',
         '/developer',
         '/contact',
         '/privacy-policy',

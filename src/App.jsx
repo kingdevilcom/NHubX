@@ -26,6 +26,7 @@ import About from './pages/About';
 import Projects from './pages/Projects';
 import Developer from './pages/Developer';
 import Contact from './pages/Contact';
+import Pricing from './pages/Pricing';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
 
@@ -87,6 +88,15 @@ const AnimatedRoutes = () => {
           element={
             <PageWrapper>
               <Developer />
+            </PageWrapper>
+          }
+        />
+
+        <Route
+          path="/pricing"
+          element={
+            <PageWrapper>
+              <Pricing />
             </PageWrapper>
           }
         />
