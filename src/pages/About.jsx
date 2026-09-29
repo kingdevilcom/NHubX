@@ -2,8 +2,10 @@ import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 import Card from '../components/Card';
 import { Shield, EyeOff, Zap, Server } from 'lucide-react';
+import { useContent } from '../context/ContentContext';
 
 const About = () => {
+  const { content } = useContent();
 
   useEffect(() => {
     document.title = "About | NHubX";
@@ -31,12 +33,11 @@ const About = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight leading-none text-white mb-6">
-            About <span className="glow-text-primary">NHubX</span>
+            {content.aboutTitle}
           </h1>
 
           <p className="text-gray-500 text-sm sm:text-base md:text-lg leading-relaxed">
-            NHubX is a modern development and cyber solutions platform focused on fast, secure, and scalable systems.
-            We build premium websites, smart dashboards, automation systems, and security-focused digital experiences.
+            {content.aboutDescription}
           </p>
 
         </motion.div>

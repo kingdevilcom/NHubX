@@ -2,8 +2,10 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Button from '../components/Button';
+import { useContent } from '../context/ContentContext';
 
 const Home = () => {
+  const { content } = useContent();
 
   useEffect(() => {
     document.title = "NHubX | Modern Digital Solutions";
@@ -138,7 +140,7 @@ const Home = () => {
             className="text-6xl sm:text-7xl md:text-8xl lg:text-[7.5rem] font-black tracking-tighter mb-4 uppercase leading-none text-white"
           >
 
-            NHUB
+            {content.heroTitle.slice(0, -1)}
 
             <motion.span
               animate={{
@@ -158,7 +160,7 @@ const Home = () => {
               className="text-[#ff3c00] glow-text-primary"
             >
 
-              X
+              {content.heroTitle.slice(-1)}
 
             </motion.span>
 
@@ -170,11 +172,7 @@ const Home = () => {
             className="text-lg sm:text-xl md:text-2xl text-gray-400 font-medium tracking-wide mb-10"
           >
 
-            One Hub.{' '}
-
-            <span className="text-white font-semibold">
-              Infinite Power.
-            </span>
+            {content.heroSubtitle}
 
           </motion.p>
 

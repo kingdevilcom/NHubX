@@ -2,24 +2,16 @@ import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 import Card from '../components/Card';
 import { Terminal } from 'lucide-react';
+import { useContent } from '../context/ContentContext';
 
 const Developer = () => {
+  const { content } = useContent();
 
   useEffect(() => {
     document.title = "Developer | NHubX";
   }, []);
 
-  const skills = [
-    'React',
-    'Next.js',
-    'Node.js',
-    'Cybersecurity',
-    'UI/UX',
-    'Firebase',
-    'Linux',
-    'Docker',
-    'WireGuard'
-  ];
+  const skills = content.skills;
 
   return (
     <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
@@ -57,7 +49,7 @@ const Developer = () => {
 
           <p className="text-gray-500 text-sm sm:text-base leading-relaxed max-w-2xl">
 
-            Core developer profile and technical overview of NanoKillX.
+            Meet the developer building and maintaining NHubX products.
 
           </p>
 
@@ -76,7 +68,7 @@ const Developer = () => {
 
                   <img
                     src="/logo.jpg"
-                    alt="NanoKillX"
+                    alt={content.developerName}
                     className="w-full h-full object-cover grayscale"
                     onError={(e) => {
                       e.target.src = '/NHubX2.0.png';
@@ -90,11 +82,11 @@ const Developer = () => {
               </div>
 
               <h3 className="text-xl font-bold tracking-wider uppercase text-white mb-1">
-                NanoKillX
+                {content.developerName}
               </h3>
 
               <p className="text-nhubx-glow-primary font-bold text-[10px] uppercase tracking-widest mb-6 font-mono">
-                Full Stack Developer
+                {content.developerRole}
               </p>
 
               {/* skills */}
@@ -158,9 +150,7 @@ const Developer = () => {
 
               <p className="text-gray-500 text-xs sm:text-sm leading-relaxed">
 
-                NanoKillX is a developer focused on modern web systems,
-                cybersecurity tools, automation platforms, and futuristic UI experiences.
-                Building clean, scalable, and secure digital products is the main objective behind NHubX.
+                {content.developerBio}
 
               </p>
 
@@ -211,7 +201,7 @@ const Developer = () => {
                   </p>
 
                   <p className="text-gray-600 mt-0.5 pl-3">
-                    NanoKillX // Developer & Founder
+                    {content.developerName} // {content.developerRole}
                   </p>
 
                 </div>

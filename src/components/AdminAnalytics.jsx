@@ -1,169 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, Users, Eye, Clock } from 'lucide-react';
+import { BarChart3, Eye, Clock, RefreshCw, Loader2 } from 'lucide-react';
+import { fetchAnalytics } from '../firebase';
 
 const AdminAnalytics = () => {
-  const [stats, setStats] = useState({
-    totalVisitors: 1247,
-    totalViews: 5892,
-    projectViews: {
-      'Prof Helper': 542,
-      'NClockX': 687,
-      'NAuthX': 234,
-      'NPassX': 189,
-      'NNetX': 156
-    },
-    dailyStats: [
-      { day: 'Mon', views: 450 },
-      { day: 'Tue', views: 520 },
-      { day: 'Wed', views: 480 },
-      { day: 'Thu', views: 620 },
-      { day: 'Fri', views: 740 },
-      { day: 'Sat', views: 890 },
-      { day: 'Sun', views: 710 }
-    ]
-  });
+  const [views, setViews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+  const loadAnalytics = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      setViews(await fetchAnalytics());
+    } catch (loadError) {
+      console.error('Unable to load analytics:', loadError);
+      setError('Analytics could not be loaded. Deploy the updated Firestore rules and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  };
+  useEffect(() => { loadAnalytics(); }, []);
+
+  const stats = useMemo(() => {
+    const now = new Date();
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(now);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - (6 - index));
+      return { date, label: date.toLocaleDateString('en-US', { weekday: 'short' }), views: 0 };
+    });
+    const pages = {};
+    views.forEach((view) => {
+      const path = view.path || '/';
+      pages[path] = (pages[path] || 0) + 1;
+      const date = view.timestamp?.toDate?.();
+      const day = date && days.find(({ date: itemDate }) => itemDate.toDateString() === date.toDateString());
+      if (day) day.views += 1;
+    });
+    return { totalViews: views.length, todayViews: days[6]?.views || 0, pages: Object.entries(pages).sort((a, b) => b[1] - a[1]), days };
+  }, [views]);
+
+  if (loading) return <div className="py-16 text-center text-gray-400"><Loader2 className="w-9 h-9 mx-auto mb-3 animate-spin text-nhubx-glow-primary" />Loading live analytics...</div>;
+  if (error) return <div className="glass rounded-2xl border border-red-500/20 p-8 text-center"><p className="text-red-300 mb-4">{error}</p><button onClick={loadAnalytics} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15"><RefreshCw size={16} /> Try again</button></div>;
+
+  const maxDailyViews = Math.max(1, ...stats.days.map((day) => day.views));
+  const maxPageViews = Math.max(1, ...stats.pages.map(([, count]) => count));
 
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Visitors */}
-        <motion.div variants={item} className="glass rounded-2xl border border-white/10 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Total Visitors</p>
-              <p className="text-3xl font-bold text-white">{stats.totalVisitors.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-blue-500/20 rounded-lg">
-              <Users className="w-6 h-6 text-blue-400" />
-            </div>
-          </div>
-          <p className="text-green-400 text-xs font-medium">↑ 12% from last month</p>
-        </motion.div>
-
-        {/* Total Views */}
-        <motion.div variants={item} className="glass rounded-2xl border border-white/10 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Total Views</p>
-              <p className="text-3xl font-bold text-white">{stats.totalViews.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-purple-500/20 rounded-lg">
-              <Eye className="w-6 h-6 text-purple-400" />
-            </div>
-          </div>
-          <p className="text-green-400 text-xs font-medium">↑ 8% from last month</p>
-        </motion.div>
-
-        {/* Avg. Daily Views */}
-        <motion.div variants={item} className="glass rounded-2xl border border-white/10 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Avg. Daily Views</p>
-              <p className="text-3xl font-bold text-white">{Math.round(stats.totalViews / 7)}</p>
-            </div>
-            <div className="p-3 bg-green-500/20 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-green-400" />
-            </div>
-          </div>
-          <p className="text-gray-400 text-xs">Last 7 days average</p>
-        </motion.div>
-
-        {/* Engagement Rate */}
-        <motion.div variants={item} className="glass rounded-2xl border border-white/10 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Engagement</p>
-              <p className="text-3xl font-bold text-white">
-                {Math.round((stats.totalViews / (stats.totalVisitors * 5)) * 100)}%
-              </p>
-            </div>
-            <div className="p-3 bg-orange-500/20 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-orange-400" />
-            </div>
-          </div>
-          <p className="text-gray-400 text-xs">Avg views per visitor</p>
-        </motion.div>
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-3 gap-4">
+        {[['Recorded views', stats.totalViews, Eye, 'text-blue-400'], ['Views today', stats.todayViews, Clock, 'text-green-400'], ['Tracked pages', stats.pages.length, BarChart3, 'text-purple-400']].map(([label, value, Icon, color]) => <div key={label} className="glass rounded-2xl border border-white/10 p-6"><Icon className={`${color} mb-4`} /><p className="text-gray-400 text-sm">{label}</p><p className="text-3xl font-bold">{value.toLocaleString()}</p></div>)}
       </div>
-
-      {/* Project Views */}
-      <motion.div variants={item} className="glass rounded-2xl border border-white/10 p-6">
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-nhubx-glow-primary" />
-          Project Views
-        </h3>
-        <div className="space-y-4">
-          {Object.entries(stats.projectViews).map(([project, views], idx) => {
-            const maxViews = Math.max(...Object.values(stats.projectViews));
-            const percentage = (views / maxViews) * 100;
-
-            return (
-              <motion.div key={project} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-300">{project}</span>
-                  <span className="text-sm font-bold text-nhubx-glow-primary">{views}</span>
-                </div>
-                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${percentage}%` }}
-                    transition={{ duration: 0.6, delay: idx * 0.1 }}
-                    className="h-full bg-gradient-to-r from-nhubx-glow-primary to-nhubx-glow-secondary"
-                  />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
-
-      {/* Daily Chart */}
-      <motion.div variants={item} className="glass rounded-2xl border border-white/10 p-6">
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-nhubx-glow-primary" />
-          Last 7 Days Activity
-        </h3>
-        <div className="flex items-end justify-between gap-2 h-40">
-          {stats.dailyStats.map((stat, idx) => {
-            const maxViews = Math.max(...stats.dailyStats.map(s => s.views));
-            const heightPercent = (stat.views / maxViews) * 100;
-
-            return (
-              <motion.div
-                key={stat.day}
-                initial={{ height: 0 }}
-                animate={{ height: `${heightPercent}%` }}
-                transition={{ duration: 0.6, delay: idx * 0.05 }}
-                className="flex-1 flex flex-col items-center"
-              >
-                <div className="w-full bg-gradient-to-t from-nhubx-glow-primary to-nhubx-glow-primary/50 rounded-t-lg hover:from-nhubx-glow-secondary hover:to-nhubx-glow-secondary/50 transition-all cursor-pointer group relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 px-2 py-1 rounded text-xs whitespace-nowrap">
-                    {stat.views}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">{stat.day}</p>
-              </motion.div>
-            );
-          })}
-        </div>
-      </motion.div>
-    </motion.div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <div className="glass rounded-2xl border border-white/10 p-6"><h3 className="text-xl font-bold mb-6">Views by page</h3><div className="space-y-4">{stats.pages.length === 0 && <p className="text-gray-500 text-sm">No page views have been recorded yet.</p>}{stats.pages.map(([path, count]) => <div key={path}><div className="flex justify-between text-sm mb-2"><span className="text-gray-300">{path}</span><span>{count}</span></div><div className="h-2 bg-white/10 rounded-full overflow-hidden"><div className="h-full bg-nhubx-glow-primary" style={{ width: `${(count / maxPageViews) * 100}%` }} /></div></div>)}</div></div>
+        <div className="glass rounded-2xl border border-white/10 p-6"><h3 className="text-xl font-bold mb-6">Last 7 days</h3><div className="h-48 flex items-end gap-3">{stats.days.map((day) => <div key={day.date.toISOString()} className="flex-1 h-full flex flex-col justify-end items-center gap-2"><span className="text-xs text-gray-400">{day.views}</span><motion.div initial={{ height: 0 }} animate={{ height: `${Math.max(3, (day.views / maxDailyViews) * 100)}%` }} className="w-full rounded-t-lg bg-gradient-to-t from-nhubx-glow-primary to-orange-300" /><span className="text-xs text-gray-500">{day.label}</span></div>)}</div></div>
+      </div>
+    </div>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   BrowserRouter as Router,
@@ -11,6 +11,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import { ProjectProvider, useProject } from './context/ProjectContext';
 import { AdminProvider } from './context/AdminContext';
+import { ContentProvider } from './context/ContentContext';
+import { trackPageView } from './firebase';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -157,6 +159,14 @@ function AppContent() {
   const isAdminRoute =
     location.pathname === '/admin';
 
+  useEffect(() => {
+    if (!isAdminRoute) {
+      trackPageView(location.pathname).catch((error) => {
+        console.error('Unable to record page view:', error);
+      });
+    }
+  }, [isAdminRoute, location.pathname]);
+
   return (
     <>
       <AnimatePresence mode="wait">
@@ -207,9 +217,9 @@ function App() {
 
       <ProjectProvider>
         <AdminProvider>
-
-          <AppContent />
-
+          <ContentProvider>
+            <AppContent />
+          </ContentProvider>
         </AdminProvider>
       </ProjectProvider>
 

@@ -17,5 +17,18 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
       allow update: if false;
     }
+
+    match /siteContent/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pageViews/{view} {
+      allow create: if request.resource.data.keys().hasOnly(['path', 'timestamp'])
+        && request.resource.data.path is string
+        && request.resource.data.path.size() <= 120;
+      allow read, delete: if isAdmin();
+      allow update: if false;
+    }
   }
 }

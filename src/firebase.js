@@ -7,9 +7,11 @@ import {
   setDoc, 
   deleteDoc, 
   doc, 
+  getDoc,
   getDocs, 
   query, 
   orderBy, 
+  limit,
   serverTimestamp 
 } from "firebase/firestore";
 
@@ -29,6 +31,54 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
+
+export const defaultSiteContent = {
+  heroTitle: 'NHubX',
+  heroSubtitle: 'One Hub. Infinite Power.',
+  aboutTitle: 'About NHubX',
+  aboutDescription: 'NHubX is an independent development hub created by NanoKillX, focused on modern web applications, Firebase-powered systems, automation, cybersecurity tools, and clean digital experiences.',
+  developerName: 'NanoKillX',
+  developerRole: 'Full Stack Developer & NHubX Founder',
+  developerBio: 'I build and maintain NHubX projects, with a focus on React interfaces, Firebase-backed applications, practical automation, and security-minded digital products. My goal is to turn useful ideas into fast, clear, and dependable software.',
+  skills: ['React', 'JavaScript', 'Firebase', 'Tailwind CSS', 'UI/UX', 'Linux', 'Cybersecurity', 'Automation'],
+  socialLinks: {
+    github: 'https://github.com/NanoKillX',
+    instagram: 'https://www.instagram.com/nanokillx/',
+    facebook: 'https://www.facebook.com/profile.php?id=61558472124147',
+    email: 'contact@nhubx.com'
+  }
+};
+
+export const fetchSiteContent = async () => {
+  const snapshot = await getDoc(doc(db, 'siteContent', 'main'));
+  return snapshot.exists()
+    ? { ...defaultSiteContent, ...snapshot.data() }
+    : defaultSiteContent;
+};
+
+export const saveSiteContent = async (content) => {
+  await setDoc(doc(db, 'siteContent', 'main'), {
+    ...content,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+};
+
+export const trackPageView = async (path) => {
+  await addDoc(collection(db, 'pageViews'), {
+    path,
+    timestamp: serverTimestamp()
+  });
+};
+
+export const fetchAnalytics = async () => {
+  const analyticsQuery = query(
+    collection(db, 'pageViews'),
+    orderBy('timestamp', 'desc'),
+    limit(1000)
+  );
+  const snapshot = await getDocs(analyticsQuery);
+  return snapshot.docs.map((view) => ({ id: view.id, ...view.data() }));
+};
 
 // --- Messages Operations ---
 
