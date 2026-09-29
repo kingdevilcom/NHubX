@@ -7,6 +7,7 @@
 @layer base {
   html {
     background-color: #000000;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -26,6 +27,28 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
     letter-spacing: -0.01em;
+  }
+}
+
+::selection {
+  background: rgba(255, 60, 0, 0.35);
+  color: white;
+}
+
+:focus-visible {
+  outline: 2px solid #ff3c00;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

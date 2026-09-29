@@ -98,7 +98,7 @@ const Navbar = () => {
               whileTap={{ scale: 0.98 }}
               className="relative overflow-hidden group bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-md shadow-nhubx-glow-primary/10 active:scale-98 transition-all duration-300"
             >
-              <span className="relative z-10">Join Now</span>
+              <span className="relative z-10">Let's Talk</span>
               <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
             </motion.button>
           </Link>
@@ -149,7 +149,7 @@ const Navbar = () => {
                   whileTap={{ scale: 0.97 }}
                   className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-md shadow-nhubx-glow-primary/10 transition-all"
                 >
-                  Join Now
+                  Let's Talk
                 </motion.button>
               </Link>
             </div>
