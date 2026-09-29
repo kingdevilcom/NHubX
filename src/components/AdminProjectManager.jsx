@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, X } from 'lucide-react';
-import { saveProject, deleteProject } from '../firebase';
+import { Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Loader2, ListOrdered } from 'lucide-react';
+import { saveProject, deleteProject, saveProjectOrder } from '../firebase';
 
 const AdminProjectManager = ({ projects, setProjects }) => {
   const [isAddingProject, setIsAddingProject] = useState(false);
@@ -19,13 +19,15 @@ const AdminProjectManager = ({ projects, setProjects }) => {
   });
   const [featureInput, setFeatureInput] = useState('');
   const [techInput, setTechInput] = useState('');
+  const [savingOrder, setSavingOrder] = useState(false);
 
   const handleAddProject = async () => {
     if (formData.name && formData.description) {
       try {
-        const id = await saveProject(formData);
+        const newProjectData = { ...formData, sortOrder: projects.length };
+        const id = await saveProject(newProjectData);
         const newProject = {
-          ...formData,
+          ...newProjectData,
           id
         };
         setProjects([...projects, newProject]);
@@ -40,8 +42,10 @@ const AdminProjectManager = ({ projects, setProjects }) => {
   const handleUpdateProject = async (id) => {
     if (formData.name && formData.description) {
       try {
-        await saveProject({ ...formData, id });
-        setProjects(projects.map(p => p.id === id ? { ...formData, id } : p));
+        const existingProject = projects.find((project) => project.id === id);
+        const updatedProject = { ...formData, id, sortOrder: existingProject?.sortOrder ?? projects.indexOf(existingProject) };
+        await saveProject(updatedProject);
+        setProjects(projects.map(p => p.id === id ? updatedProject : p));
         resetForm();
       } catch (error) {
         console.error("Error updating project:", error);
@@ -54,11 +58,33 @@ const AdminProjectManager = ({ projects, setProjects }) => {
     if (window.confirm("Are you sure you want to delete this project?")) {
       try {
         await deleteProject(id);
-        setProjects(projects.filter(p => p.id !== id));
+        const remainingProjects = projects.filter(p => p.id !== id).map((project, index) => ({ ...project, sortOrder: index }));
+        setProjects(remainingProjects);
+        await saveProjectOrder(remainingProjects);
       } catch (error) {
         console.error("Error deleting project:", error);
         alert("Failed to delete project: " + error.message);
       }
+    }
+  };
+
+  const moveProject = async (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= projects.length || savingOrder) return;
+
+    const reordered = [...projects];
+    [reordered[index], reordered[targetIndex]] = [reordered[targetIndex], reordered[index]];
+    const normalized = reordered.map((project, order) => ({ ...project, sortOrder: order }));
+    setProjects(normalized);
+    setSavingOrder(true);
+    try {
+      await saveProjectOrder(normalized);
+    } catch (error) {
+      console.error('Unable to save project order:', error);
+      setProjects(projects);
+      alert(`Failed to save project order: ${error.message}`);
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -118,19 +144,17 @@ const AdminProjectManager = ({ projects, setProjects }) => {
 
   return (
     <div className="space-y-6">
-      {/* Add Project Button */}
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={() => {
-          resetForm();
-          setIsAddingProject(true);
-        }}
-        className="flex items-center gap-2 bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 text-white px-6 py-3 rounded-lg font-bold transition-all shadow-glow hover:scale-105 active:scale-95"
-      >
-        <Plus size={20} />
-        Add New Project
-      </motion.button>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="glass rounded-xl border border-white/10 p-4"><p className="text-xs text-gray-500 uppercase">Total</p><p className="text-2xl font-bold">{projects.length}</p></div>
+        <div className="glass rounded-xl border border-white/10 p-4"><p className="text-xs text-gray-500 uppercase">Live</p><p className="text-2xl font-bold text-green-400">{projects.filter((project) => project.status === 'LIVE').length}</p></div>
+        <div className="glass rounded-xl border border-white/10 p-4"><p className="text-xs text-gray-500 uppercase">In development</p><p className="text-2xl font-bold text-yellow-400">{projects.filter((project) => project.status !== 'LIVE').length}</p></div>
+        <div className="glass rounded-xl border border-white/10 p-4"><p className="text-xs text-gray-500 uppercase">First project</p><p className="font-bold truncate">{projects[0]?.name || 'None'}</p></div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div><h3 className="font-bold flex items-center gap-2"><ListOrdered size={18} className="text-nhubx-glow-primary" />Project order</h3><p className="text-xs text-gray-500 mt-1">Use the arrows to choose what visitors see first.</p></div>
+        <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onClick={() => { resetForm(); setIsAddingProject(true); }} className="flex items-center justify-center gap-2 bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/80 text-white px-6 py-3 rounded-lg font-bold transition-all shadow-glow hover:scale-105 active:scale-95"><Plus size={20} />Add New Project</motion.button>
+      </div>
 
       {/* Add/Edit Form */}
       <AnimatePresence>
@@ -348,7 +372,12 @@ const AdminProjectManager = ({ projects, setProjects }) => {
                 </span>
               </div>
             </div>
-            <div className="flex gap-2 group-hover:opacity-100">
+            <div className="flex items-center gap-1 sm:gap-2 group-hover:opacity-100">
+              <div className="flex flex-col mr-1">
+                <button disabled={idx === 0 || savingOrder} onClick={() => moveProject(idx, -1)} className="p-1 rounded hover:bg-white/10 disabled:opacity-20" title="Move up"><ChevronUp size={17} /></button>
+                <button disabled={idx === projects.length - 1 || savingOrder} onClick={() => moveProject(idx, 1)} className="p-1 rounded hover:bg-white/10 disabled:opacity-20" title="Move down"><ChevronDown size={17} /></button>
+              </div>
+              <span className="hidden sm:inline-flex w-7 h-7 items-center justify-center rounded-full bg-white/5 text-xs text-gray-400">{idx + 1}</span>
               <button
                 onClick={() => handleEditProject(project)}
                 className="p-2 hover:bg-nhubx-glow-primary/20 rounded-lg transition-colors"
@@ -369,6 +398,7 @@ const AdminProjectManager = ({ projects, setProjects }) => {
             <p>No projects yet. Create your first one!</p>
           </div>
         )}
+        {savingOrder && <div className="fixed bottom-6 right-6 flex items-center gap-2 rounded-xl bg-black/90 border border-white/10 px-4 py-3 text-sm shadow-2xl"><Loader2 size={16} className="animate-spin text-nhubx-glow-primary" />Saving project order...</div>}
       </motion.div>
     </div>
   );

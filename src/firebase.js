@@ -12,6 +12,7 @@ import {
   query, 
   orderBy, 
   limit,
+  writeBatch,
   serverTimestamp 
 } from "firebase/firestore";
 
@@ -150,7 +151,11 @@ export const fetchProjects = async () => {
         ...doc.data()
       });
     });
-    return projs;
+    return projs.sort((a, b) => {
+      const first = Number.isFinite(a.sortOrder) ? a.sortOrder : Number.MAX_SAFE_INTEGER;
+      const second = Number.isFinite(b.sortOrder) ? b.sortOrder : Number.MAX_SAFE_INTEGER;
+      return first - second || a.name.localeCompare(b.name);
+    });
   } catch (error) {
     console.error("Error fetching projects from Firestore:", error);
     throw error;
@@ -170,7 +175,8 @@ export const saveProject = async (project) => {
       link: project.link || '',
       iconName: project.iconName || '',
       features: project.features || [],
-      technologies: project.technologies || []
+      technologies: project.technologies || [],
+      sortOrder: Number.isFinite(project.sortOrder) ? project.sortOrder : 9999
     };
     await setDoc(doc(db, "projects", id), projectData);
     return id;
@@ -178,6 +184,15 @@ export const saveProject = async (project) => {
     console.error("Error saving project to Firestore:", error);
     throw error;
   }
+};
+
+export const saveProjectOrder = async (projects) => {
+  if (projects.length === 0) return;
+  const batch = writeBatch(db);
+  projects.forEach((project, index) => {
+    batch.update(doc(db, 'projects', String(project.id)), { sortOrder: index });
+  });
+  await batch.commit();
 };
 
 // Delete a project from Firestore
@@ -196,7 +211,7 @@ export const initializeDefaultProjects = async (defaultProjects) => {
     const existing = await fetchProjects();
     if (existing.length === 0) {
       console.log("Firestore projects list is empty. Initializing default projects...");
-      for (const proj of defaultProjects) {
+      for (const [index, proj] of defaultProjects.entries()) {
         // Strip non-serializable fields (like React elements for icons)
         const serializableProject = {
           id: proj.id ? String(proj.id) : String(Math.floor(Math.random() * 1000000)),
@@ -208,7 +223,8 @@ export const initializeDefaultProjects = async (defaultProjects) => {
           link: proj.link,
           iconName: proj.iconName || '',
           features: proj.features,
-          technologies: proj.technologies
+          technologies: proj.technologies,
+          sortOrder: index
         };
         await saveProject(serializableProject);
       }

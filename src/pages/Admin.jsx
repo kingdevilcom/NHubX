@@ -32,7 +32,7 @@ const Admin = () => {
 
     try {
       const data = await fetchProjects();
-      setProjects(data);
+      setProjects(data.map((project, index) => ({ ...project, sortOrder: index })));
     } catch (error) {
       console.error('Failed to load projects from Firestore in Admin:', error);
       setProjectsError('Projects could not be loaded. Check your connection and Firestore permissions.');
