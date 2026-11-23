@@ -24,7 +24,10 @@ service cloud.firestore {
         && request.resource.data.message.size() > 0
         && request.resource.data.message.size() <= 2000;
       allow read, delete: if isAdmin();
-      allow update: if false;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'stageUpdatedAt'])
+        && request.resource.data.stage in ['New', 'Replied', 'Closed']
+        && request.resource.data.stageUpdatedAt == request.time;
     }
 
     match /siteContent/{document} {

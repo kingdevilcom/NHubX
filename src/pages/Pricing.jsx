@@ -2,24 +2,25 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronRight, Database, Globe2, Loader2, Send, Server, X } from 'lucide-react';
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js/min';
-import { saveMessage } from '../firebase';
+import { saveMessage, trackPricingEvent } from '../firebase';
+import PricingGuide from '../components/PricingGuide';
 import { preparePlanEnquiry } from '../planEnquiry';
 
 const plans = [
   {
-    name: 'Mini', price: '4,999', description: 'A clean online presence for individuals and small businesses.', hosting: 'LKR 499/year', features: ['Custom one-page website', 'Responsive on every screen', 'About, services and contact sections', 'WhatsApp and social links', 'Basic SEO and animations', 'One revision']
+    name: 'Mini', bestFor: 'A one-page website', price: '4,999', description: 'A clean online presence for individuals and small businesses.', hosting: 'LKR 499/year', features: ['Custom one-page website', 'Responsive on every screen', 'About, services and contact sections', 'WhatsApp and social links', 'Basic SEO and animations', 'One revision']
   },
   {
-    name: 'Launch Bundle', price: '6,999', description: 'Everything needed to launch and become discoverable online.', hosting: 'LKR 499/year', features: ['Everything in Mini', 'Domain connection', 'DNS configuration', 'Google Search Console', 'XML sitemap submission', 'Google Analytics setup']
+    name: 'Launch Bundle', bestFor: 'A one-page site with domain and search setup', price: '6,999', description: 'Everything needed to launch and become discoverable online.', hosting: 'LKR 499/year', features: ['Everything in Mini', 'Domain connection', 'DNS configuration', 'Google Search Console', 'XML sitemap submission', 'Google Analytics setup']
   },
   {
-    name: 'Starter', price: '9,999', description: 'A multi-page website for brands and growing local businesses.', hosting: 'LKR 2,000/year', popular: true, features: ['Up to three custom pages', 'Contact form', 'Custom animations', 'Analytics and basic SEO', 'Free DNS, GSC and sitemap setup', 'Two revisions and 14 days support']
+    name: 'Starter', bestFor: 'Up to three pages with a contact form', price: '9,999', description: 'A multi-page website for brands and growing local businesses.', hosting: 'LKR 2,000/year', popular: true, features: ['Up to three custom pages', 'Contact form', 'Custom animations', 'Analytics and basic SEO', 'Free DNS, GSC and sitemap setup', 'Two revisions and 14 days support']
   },
   {
-    name: 'Business', price: '19,999', description: 'A complete professional website with stronger content and integrations.', hosting: 'LKR 2,000/year', features: ['Up to five custom pages', 'Advanced contact form', 'Maps, WhatsApp and social links', 'Performance optimization', 'Free DNS, GSC and sitemap setup', 'Three revisions and 30 days support']
+    name: 'Business', bestFor: 'Up to five pages with integrations', price: '19,999', description: 'A complete professional website with stronger content and integrations.', hosting: 'LKR 2,000/year', features: ['Up to five custom pages', 'Advanced contact form', 'Maps, WhatsApp and social links', 'Performance optimization', 'Free DNS, GSC and sitemap setup', 'Three revisions and 30 days support']
   },
   {
-    name: 'Advanced', price: '39,999+', description: 'Dynamic websites with authentication and management features.', hosting: 'From LKR 2,000/year', features: ['Up to eight custom pages', 'Database integration', 'Google authentication', 'Admin dashboard', 'Editable website content', 'Four revisions and 60 days support']
+    name: 'Advanced', bestFor: 'Web apps with login and admin tools', price: '39,999+', description: 'Dynamic websites with authentication and management features.', hosting: 'From LKR 2,000/year', features: ['Up to eight custom pages', 'Database integration', 'Google authentication', 'Admin dashboard', 'Editable website content', 'Four revisions and 60 days support']
   }
 ];
 
@@ -97,6 +98,7 @@ const Pricing = () => {
   }, [selectedPlan]);
   const openPlanForm = (plan) => {
     setSelectedPlan(plan);
+    trackPricingEvent('open');
     setStatus('idle');
     setError('');
   };
@@ -122,6 +124,7 @@ const Pricing = () => {
     try {
       await saveMessage(enquiry.name, enquiry.email, enquiry.message);
       setStatus('success');
+      trackPricingEvent('submitted');
       setForm((current) => ({ name: '', country: current.country, whatsapp: '', email: '', details: '' }));
     } catch (submitError) {
       console.error('Unable to submit plan enquiry:', submitError);
@@ -162,6 +165,8 @@ const Pricing = () => {
             <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8"><Globe2 className="text-nhubx-glow-primary mb-4" /><h2 className="text-xl font-bold mb-3">Payment terms</h2><p className="text-sm leading-relaxed text-gray-500">40% to begin, 30% after design approval and 30% before launch. Work outside the approved scope is quoted separately.</p></div>
           </div>
         </section>
+
+        <PricingGuide plans={plans} />
 
         <section className="mt-16 rounded-2xl border border-nhubx-glow-primary/20 bg-nhubx-glow-primary/[0.06] p-8 sm:p-12 text-center"><h2 className="text-3xl sm:text-4xl font-black">Need something more specific?</h2><p className="mt-3 text-gray-500">E-commerce, booking systems, AI tools and custom platforms are quoted according to scope.</p><Link to="/contact" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-nhubx-glow-primary px-6 py-3 text-xs font-bold uppercase tracking-wider">Request a quote <ChevronRight size={15} /></Link></section>
       </div>

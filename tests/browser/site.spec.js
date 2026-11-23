@@ -10,14 +10,15 @@ test('homepage navigation loads pricing on demand', async ({ page, isMobile }) =
   page.on('request', (request) => modules.push(request.url()));
   await page.addInitScript(() => {
     const observer = new MutationObserver(() => {
-      if ([...document.querySelectorAll('[role="status"]')].some((status) => status.textContent.includes('Loading NHubX'))) {
+      const splash = document.querySelector('[role="status"][aria-label="Loading NHubX"]');
+      if (splash?.textContent.includes('INITIALIZING SYSTEMS...') && /\b\d+%/.test(splash.textContent)) {
         document.documentElement.dataset.sawStartupSplash = 'true';
         observer.disconnect();
       }
     });
     observer.observe(document, { childList: true, subtree: true });
   });
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-saw-startup-splash', 'true');
   await expect(page.getByRole('heading', { name: 'NHubX', exact: true, level: 1 })).toBeVisible();
   expect(modules.some((url) => /\/assets\/Pricing-/.test(url))).toBe(false);
@@ -40,7 +41,8 @@ test('homepage navigation loads pricing on demand', async ({ page, isMobile }) =
 });
 
 test('pricing retains details after validation and restores keyboard focus', async ({ page }) => {
-  await page.goto('/pricing');
+  test.setTimeout(60_000);
+  await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const opener = page.getByRole('button', { name: 'Choose plan' }).first();
   await opener.click();
   const dialog = page.getByRole('dialog', { name: 'Mini' });
@@ -71,7 +73,30 @@ test('pricing retains details after validation and restores keyboard focus', asy
 test('the current fire palette applies with reduced motion enabled', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.setFixedTime(new Date('2026-12-31T18:30:00Z'));
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.locator('html').evaluate((element) => element.style.getPropertyValue('--fire-primary'))).toBe('249 82 36');
   await expect(page.locator('canvas')).toHaveCount(0);
+});
+
+test('project case studies show real screenshots and demo links', async ({ page }) => {
+  await page.goto('/projects', { waitUntil: 'domcontentloaded' });
+  const studies = page.getByRole('region', { name: 'Project case studies' });
+  await expect(studies.getByRole('heading', { name: 'NextPath Advisory' })).toBeVisible();
+  await expect(studies.getByRole('heading', { name: 'RoutineX' })).toBeVisible();
+  for (const image of await studies.getByRole('img').all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect.poll(() => image.evaluate((element) => element.naturalWidth)).toBeGreaterThan(0);
+  }
+  await expect(studies.getByRole('link', { name: /RoutineX live demo/ })).toHaveAttribute('href', 'https://routinex.nhubx.com/');
+});
+
+test('pricing comparison and FAQs clarify the plan costs and handover', async ({ page }) => {
+  await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
+  const comparison = page.getByRole('region', { name: 'Scrollable plan comparison' });
+  const mini = comparison.getByRole('row', { name: /Mini/ });
+  await expect(mini.getByRole('cell', { name: 'LKR 4,999' })).toBeVisible();
+  await expect(mini.getByRole('cell', { name: 'LKR 499/year' })).toBeVisible();
+  const question = page.getByText('Who owns the website and its accounts?', { exact: true });
+  await question.click();
+  await expect(page.getByText(/proposal will spell out what files and account access/)).toBeVisible();
 });

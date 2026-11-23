@@ -1,18 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Eye, Clock, RefreshCw, Loader2 } from 'lucide-react';
-import { fetchAnalytics } from '../firebase';
+import { fetchAnalytics, fetchPricingFunnel } from '../firebase';
+import { isAnalyticsEventPath } from '../enquiryTracking';
 
 const AdminAnalytics = () => {
   const [views, setViews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [funnel, setFunnel] = useState(null);
 
   const loadAnalytics = async () => {
     setLoading(true);
     setError('');
     try {
-      setViews(await fetchAnalytics());
+      const [recentViews, pricing] = await Promise.allSettled([fetchAnalytics(), fetchPricingFunnel()]);
+      setFunnel(pricing.status === 'fulfilled' ? pricing.value : null);
+      if (recentViews.status === 'rejected') throw recentViews.reason;
+      setViews(recentViews.value.filter((view) => !isAnalyticsEventPath(view.path)));
     } catch (loadError) {
       console.error('Unable to load analytics:', loadError);
       setError('Analytics could not be loaded. Deploy the updated Firestore rules and try again.');
@@ -50,6 +55,17 @@ const AdminAnalytics = () => {
 
   return (
     <div className="space-y-6">
+      <section aria-labelledby="pricing-funnel-title" className="glass rounded-2xl border border-white/10 p-6">
+        <h3 id="pricing-funnel-title" className="text-xl font-bold mb-2">Pricing enquiry activity</h3>
+        <p className="text-sm text-gray-400 mb-5">All recorded activity. Repeat visits and form opens count separately.</p>
+        {funnel ? (
+          <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[['Pricing page views', funnel.visit], ['Enquiry forms opened', funnel.open], ['Enquiries sent', funnel.submitted]].map(([label, value]) => (
+              <div key={label}><dt className="text-sm text-gray-400">{label}</dt><dd className="mt-1 text-2xl font-bold">{value.toLocaleString()}</dd></div>
+            ))}
+          </dl>
+        ) : <p className="text-gray-400">Pricing activity could not be loaded. Refresh analytics to try again.</p>}
+      </section>
       <div className="grid sm:grid-cols-3 gap-4">
         {[['Recorded views', stats.totalViews, Eye, 'text-blue-400'], ['Views today', stats.todayViews, Clock, 'text-green-400'], ['Tracked pages', stats.pages.length, BarChart3, 'text-purple-400']].map(([label, value, Icon, color]) => <div key={label} className="glass rounded-2xl border border-white/10 p-6"><Icon className={`${color} mb-4`} /><p className="text-gray-400 text-sm">{label}</p><p className="text-3xl font-bold">{value.toLocaleString()}</p></div>)}
       </div>

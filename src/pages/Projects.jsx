@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Card from '../components/Card';
 import ProjectDetailModal from '../components/ProjectDetailModal';
+import ProjectCaseStudies from '../components/ProjectCaseStudies';
 import { useProject } from '../context/ProjectContext';
 import { Shield, Lock, Wifi, Book, Clock, Cpu } from 'lucide-react';
 import { fetchProjects, initializeDefaultProjects } from '../firebase';
@@ -188,22 +189,6 @@ const Projects = () => {
 
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen pt-32 pb-24 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-
-          <div className="w-12 h-12 rounded-full border-2 border-t-nhubx-glow-primary border-white/5 animate-spin" />
-
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest font-mono">
-            Decoding Project Matrix...
-          </span>
-
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
@@ -235,6 +220,9 @@ const Projects = () => {
             </p>
 
           </motion.div>
+
+          <ProjectCaseStudies />
+          {loading && <p role="status" className="text-center text-gray-400 py-6">Loading the project catalogue…</p>}
 
           {/* cards */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

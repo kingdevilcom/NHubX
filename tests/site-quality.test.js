@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fireThemeVariables, monthlyFireThemes, nextFireThemeChange, resolveFireTheme } from '../src/fireTheme.js';
 import { preparePlanEnquiry } from '../src/planEnquiry.js';
+import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPaths } from '../src/enquiryTracking.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
   assert.equal(new Set(monthlyFireThemes.map(({ primary }) => primary)).size, 12);
@@ -52,4 +53,19 @@ test('pricing enquiries validate input, normalize the number, and retain the req
   assert.match(enquiry.message, /WhatsApp: \+94 77 123 4567/);
   assert.match(enquiry.message, /Project details: A portfolio/);
   assert.equal(preparePlanEnquiry(plan, { ...form, whatsapp: '+94 77 123 4567' }).message, enquiry.message);
+});
+
+test('older enquiries retain their plan and default to New', () => {
+  assert.equal(getEnquiryPlan(preparePlanEnquiry(plan, form).message), 'Mini');
+  assert.equal(getEnquiryPlan('Hello, I am interested in a custom site'), null);
+  assert.equal(getEnquiryStage(undefined), 'New');
+  assert.equal(getEnquiryStage('Replied'), 'Replied');
+  assert.equal(getEnquiryStage('Closed'), 'Closed');
+});
+
+test('pricing interaction paths are fixed and excluded from ordinary view totals', () => {
+  assert.equal(pricingEventPaths.visit, '/pricing');
+  assert.equal(isAnalyticsEventPath(pricingEventPaths.visit), false);
+  assert.equal(isAnalyticsEventPath(pricingEventPaths.open), true);
+  assert.equal(isAnalyticsEventPath(pricingEventPaths.submitted), true);
 });

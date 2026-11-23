@@ -7,14 +7,18 @@ import {
   deleteDoc, 
   doc, 
   getDoc,
+  getCountFromServer,
   onSnapshot,
   getDocs, 
   query, 
   orderBy, 
   limit,
+  where,
+  updateDoc,
   writeBatch,
   serverTimestamp 
 } from "firebase/firestore";
+import { enquiryStages, isAnalyticsEventPath, pricingEventPaths } from './enquiryTracking';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA-7maf9y-bv8TilNyAhqaGMwPvuhTHPKc",
@@ -69,12 +73,28 @@ export const watchThemeSetting = (onChange, onError) =>
 export const saveThemeSetting = (selection) =>
   setDoc(themeDocument, { selection, updatedAt: serverTimestamp() }, { merge: true });
 
-export const trackPageView = async (path) => {
-  await addDoc(collection(db, 'pageViews'), {
+const recordPageView = (path) =>
+  addDoc(collection(db, 'pageViews'), {
     path,
     timestamp: serverTimestamp()
   });
-};
+
+export const trackPageView = (path) => recordPageView(isAnalyticsEventPath(path) ? '/404' : path);
+
+export function trackPricingEvent(event) {
+  const path = pricingEventPaths[event];
+  if (event !== 'open' && event !== 'submitted') return;
+  recordPageView(path).catch((error) => console.error('Unable to record pricing activity:', error));
+}
+
+export async function fetchPricingFunnel() {
+  const views = collection(db, 'pageViews');
+  const counts = await Promise.all(Object.entries(pricingEventPaths).map(async ([event, path]) => {
+    const snapshot = await getCountFromServer(query(views, where('path', '==', path)));
+    return [event, snapshot.data().count];
+  }));
+  return Object.fromEntries(counts);
+}
 
 export const fetchAnalytics = async () => {
   const analyticsQuery = query(
@@ -141,6 +161,11 @@ export const deleteMessage = async (id) => {
     console.error("Error deleting message from Firestore:", error);
     throw error;
   }
+};
+
+export const saveEnquiryStage = (id, stage) => {
+  if (!enquiryStages.includes(stage)) throw new Error('Unknown enquiry stage.');
+  return updateDoc(doc(db, 'messages', id), { stage, stageUpdatedAt: serverTimestamp() });
 };
 
 // --- Projects Operations ---

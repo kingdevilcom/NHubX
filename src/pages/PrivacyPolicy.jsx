@@ -153,6 +153,9 @@ const PrivacyPolicy = () => {
               to improve user experience, monitor traffic,
               and optimize system performance.
 
+              Pricing analytics record page visits, enquiry form opens, and successful submissions.
+              The analytics records do not include names, email addresses, phone numbers, or enquiry text.
+
             </p>
 
           </section>
