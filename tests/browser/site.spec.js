@@ -34,7 +34,20 @@ test('homepage navigation loads pricing on demand', async ({ page, isMobile }) =
   }
 
   const navigation = page.getByRole('navigation', { name: 'Main navigation' });
-  await navigation.getByRole('link', { name: 'Pricing', exact: true }).click();
+  const pricingChunk = Promise.withResolvers();
+  await page.route('**/assets/Pricing-*.js', async (route) => {
+    await pricingChunk.promise;
+    await route.continue();
+  });
+  try {
+    await navigation.getByRole('link', { name: 'Pricing', exact: true }).click();
+    await expect(page.getByRole('main').getByRole('status', { name: 'Loading page' })).toBeVisible();
+    await expect(navigation).toBeVisible();
+    await expect(page.getByRole('contentinfo')).toBeVisible();
+    await expect(page.getByRole('status', { name: 'Loading NHubX' })).toHaveCount(0);
+  } finally {
+    pricingChunk.resolve();
+  }
   await expect(page).toHaveURL(/\/pricing$/);
   await expect(page.getByRole('button', { name: 'Choose plan' })).toHaveCount(5);
   expect(modules.some((url) => /\/assets\/Pricing-/.test(url))).toBe(true);

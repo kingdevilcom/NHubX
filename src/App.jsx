@@ -43,6 +43,14 @@ const PageWrapper = ({ children }) => (
   </motion.div>
 );
 
+function PageLoading() {
+  return (
+    <div role="status" aria-label="Loading page" className="flex min-h-[50vh] items-center justify-center">
+      <span aria-hidden="true" className="h-10 w-10 rounded-full border-2 border-white/10 border-t-nhubx-glow-primary motion-safe:animate-spin" />
+    </div>
+  );
+}
+
 const AnimatedRoutes = () => {
   const location = useLocation();
 
@@ -181,7 +189,7 @@ function AppContent() {
         {!showStartup && <FireParticles zIndex={1} />}
         {!isAdminRoute && <Navbar />}
         <main className="flex-grow relative z-10">
-          <Suspense fallback={showStartup ? null : <LoadingScreen />}>
+          <Suspense fallback={showStartup ? null : <PageLoading />}>
             <AnimatedRoutes />
           </Suspense>
         </main>
