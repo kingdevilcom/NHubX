@@ -121,7 +121,7 @@ const Pricing = () => {
               <div className="my-6"><span className="text-xs text-gray-500">LKR</span><p className="text-3xl font-black text-white">{plan.price}</p><p className="text-[10px] uppercase tracking-wider text-gray-600">development</p></div>
               <ul className="space-y-3 flex-1">{plan.features.map((feature) => <li key={feature} className="flex items-start gap-2 text-xs text-gray-400"><Check size={14} className="text-nhubx-glow-primary shrink-0 mt-0.5" />{feature}</li>)}</ul>
               <div className="mt-6 pt-4 border-t border-white/[0.06]"><p className="text-[10px] uppercase tracking-wider text-gray-600">Hosting</p><p className="text-sm font-semibold mt-1">{plan.hosting}</p></div>
-              <button onClick={() => openPlanForm(plan)} className={`mt-5 inline-flex items-center justify-center gap-1 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-colors ${plan.popular ? 'bg-nhubx-glow-primary hover:bg-orange-500' : 'bg-white/[0.05] hover:bg-white/[0.1]'}`}>Choose plan <ChevronRight size={14} /></button>
+              <button onClick={() => openPlanForm(plan)} className={`mt-5 inline-flex items-center justify-center gap-1 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-colors ${plan.popular ? 'bg-nhubx-glow-primary hover:bg-nhubx-glow-hover' : 'bg-white/[0.05] hover:bg-white/[0.1]'}`}>Choose plan <ChevronRight size={14} /></button>
             </article>
           ))}
         </div>
@@ -161,7 +161,7 @@ const Pricing = () => {
                 <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Project details <span className="text-gray-600">(optional)</span></span><textarea rows="3" maxLength="1000" value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder="Tell us what you want to build..." className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60 sm:min-h-28" /></label>
                 {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
                 <p className="text-[11px] leading-relaxed text-gray-600">By submitting, you allow NHubX to contact you about this project through WhatsApp or email.</p>
-                <button type="submit" disabled={status === 'loading'} className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-nhubx-glow-primary hover:bg-orange-500 disabled:opacity-60 px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition-colors">{status === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Sending enquiry</> : <><Send size={16} /> Send enquiry</>}</button>
+                <button type="submit" disabled={status === 'loading'} className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-nhubx-glow-primary hover:bg-nhubx-glow-hover disabled:opacity-60 px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition-colors">{status === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Sending enquiry</> : <><Send size={16} /> Send enquiry</>}</button>
               </form>
             )}
           </div>

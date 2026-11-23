@@ -36,7 +36,7 @@ const Navbar = () => {
               <img 
                 src="/NHubX2.0.png" 
                 alt="NHubX Logo" 
-                className="w-8 h-8 sm:w-9 h-9 shadow-md rounded-lg transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-[0_0_12px_rgba(255,60,0,0.3)] border border-white/[0.08]" 
+                className="w-8 h-8 sm:w-9 h-9 shadow-md rounded-lg transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-[0_0_12px_rgb(var(--fire-primary)/0.3)] border border-white/[0.08]"
                 onError={(e) => {
                   e.target.style.display = 'none';
                 }}
@@ -80,7 +80,7 @@ const Navbar = () => {
                   {isActive && (
                     <motion.span
                       layoutId="activeNavTab"
-                      className="absolute inset-0 bg-nhubx-glow-primary/95 rounded-md shadow-[0_0_10px_rgba(255,60,0,0.3)] z-0"
+                      className="absolute inset-0 bg-nhubx-glow-primary/95 rounded-md shadow-[0_0_10px_rgb(var(--fire-primary)/0.3)] z-0"
                       transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                     />
                   )}
@@ -136,7 +136,7 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                     className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
                       isActive 
-                        ? 'text-nhubx-glow-primary bg-nhubx-glow-primary/5 border-nhubx-glow-primary/20 shadow-[inset_0_0_8px_rgba(255,60,0,0.05)]' 
+                        ? 'text-nhubx-glow-primary bg-nhubx-glow-primary/5 border-nhubx-glow-primary/20 shadow-[inset_0_0_8px_rgb(var(--fire-primary)/0.05)]'
                         : 'text-gray-300 border-transparent hover:bg-white/5 hover:text-white'
                     }`}
                   >

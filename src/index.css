@@ -5,6 +5,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --fire-primary: 255 60 0;
+    --fire-secondary: 255 122 0;
+    --fire-hover: 249 115 22;
+  }
+
   html {
     background-color: #000000;
     scroll-behavior: smooth;
@@ -16,7 +22,7 @@
     /* Centered orange radial gradient matching the loading screen background exactly */
     background-image: radial-gradient(
       circle at center,
-      rgba(255, 60, 0, 0.05) 0%,
+      rgb(var(--fire-primary)/0.05) 0%,
       transparent 70%
     );
     background-attachment: fixed;
@@ -31,12 +37,12 @@
 }
 
 ::selection {
-  background: rgba(255, 60, 0, 0.35);
+  background: rgb(var(--fire-primary)/0.35);
   color: white;
 }
 
 :focus-visible {
-  outline: 2px solid #ff3c00;
+  outline: 2px solid rgb(var(--fire-primary));
   outline-offset: 3px;
 }
 
@@ -70,11 +76,11 @@
   }
 
   .glow-text-primary {
-    @apply text-nhubx-glow-primary drop-shadow-[0_0_10px_rgba(255,60,0,0.5)];
+    @apply text-nhubx-glow-primary drop-shadow-[0_0_10px_rgb(var(--fire-primary)/0.5)];
   }
   
   .glow-text-secondary {
-    @apply text-nhubx-glow-secondary drop-shadow-[0_0_8px_rgba(255,122,0,0.35)];
+    @apply text-nhubx-glow-secondary drop-shadow-[0_0_8px_rgb(var(--fire-secondary)/0.35)];
   }
 
   .glow-border {
@@ -82,11 +88,11 @@
   }
 
   .shadow-glow {
-    @apply shadow-[0_0_20px_rgba(255,60,0,0.18)];
+    @apply shadow-[0_0_20px_rgb(var(--fire-primary)/0.18)];
   }
   
   .shadow-glow-lg {
-    @apply shadow-[0_0_35px_rgba(255,60,0,0.28)];
+    @apply shadow-[0_0_35px_rgb(var(--fire-primary)/0.28)];
   }
 }
 
@@ -100,5 +106,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-white/[0.06] rounded-none hover:bg-[#ff3c00]/40 transition-colors duration-300;
+  @apply bg-white/[0.06] rounded-none hover:bg-nhubx-glow-primary/40 transition-colors duration-300;
 }

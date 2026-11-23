@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Save, Loader2, Plus, X } from 'lucide-react';
 import { defaultSiteContent, fetchSiteContent, saveSiteContent } from '../firebase';
 import { useContent } from '../context/ContentContext';
+import AdminThemeSettings from './AdminThemeSettings';
 
 const AdminContentEditor = () => {
   const [content, setContent] = useState(defaultSiteContent);
@@ -41,6 +42,7 @@ const AdminContentEditor = () => {
 
   return (
     <div className="space-y-6">
+      <AdminThemeSettings fieldClass={fieldClass} />
       {notice && <div className={`rounded-xl border p-4 ${notice.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-300' : 'bg-red-500/10 border-red-500/20 text-red-300'}`}>{notice.text}</div>}
       <section className="glass rounded-2xl border border-white/10 p-6 space-y-4"><h3 className="text-xl font-bold">Homepage</h3><input className={fieldClass} value={content.heroTitle} onChange={(event) => update('heroTitle', event.target.value)} placeholder="Hero title" /><input className={fieldClass} value={content.heroSubtitle} onChange={(event) => update('heroSubtitle', event.target.value)} placeholder="Hero subtitle" /></section>
       <section className="glass rounded-2xl border border-white/10 p-6 space-y-4"><h3 className="text-xl font-bold">About NHubX</h3><input className={fieldClass} value={content.aboutTitle} onChange={(event) => update('aboutTitle', event.target.value)} placeholder="About title" /><textarea className={fieldClass} rows="5" value={content.aboutDescription} onChange={(event) => update('aboutDescription', event.target.value)} placeholder="About description" /></section>

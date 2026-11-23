@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { useContent } from '../context/ContentContext';
 
 const FireParticles = ({ zIndex = 1 }) => {
+  const { theme: { emberShift } } = useContent();
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false, lastX: 0, lastY: 0 });
 
@@ -66,7 +68,7 @@ const FireParticles = ({ zIndex = 1 }) => {
         
         // Glow hues from deep red-orange to bright amber
         const hues = [12, 24, 36, 48];
-        this.hue = hues[Math.floor(Math.random() * hues.length)];
+        this.hue = (hues[Math.floor(Math.random() * hues.length)] + emberShift + 360) % 360;
       }
 
       update() {
@@ -164,7 +166,7 @@ const FireParticles = ({ zIndex = 1 }) => {
       document.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [emberShift]);
 
   return (
     <canvas 

@@ -9,8 +9,9 @@ export default {
       colors: {
         'nhubx-bg-primary': '#0a0a0a',
         'nhubx-bg-secondary': '#121212',
-        'nhubx-glow-primary': '#ff3c00',
-        'nhubx-glow-secondary': '#ff7a00',
+        'nhubx-glow-primary': 'rgb(var(--fire-primary) / <alpha-value>)',
+        'nhubx-glow-secondary': 'rgb(var(--fire-secondary) / <alpha-value>)',
+        'nhubx-glow-hover': 'rgb(var(--fire-hover) / <alpha-value>)',
         'nhubx-accent': '#1f1f1f',
       },
       borderRadius: {
@@ -37,8 +38,8 @@ export default {
         },
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(255, 60, 0, 0.3)',
-        'glow-lg': '0 0 40px rgba(255, 60, 0, 0.5)',
+        'glow': '0 0 20px rgb(var(--fire-primary)/0.3)',
+        'glow-lg': '0 0 40px rgb(var(--fire-primary)/0.5)',
       }
     },
   },

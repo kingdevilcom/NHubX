@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { defaultSiteContent, fetchSiteContent } from '../firebase';
+import { useSiteTheme } from './useSiteTheme';
 
 const ContentContext = createContext(null);
 
 export const ContentProvider = ({ children }) => {
+  const { theme, themeSetting } = useSiteTheme();
   const [content, setContent] = useState(defaultSiteContent);
   const [contentLoading, setContentLoading] = useState(true);
 
@@ -22,7 +24,7 @@ export const ContentProvider = ({ children }) => {
   }, []);
 
   return (
-    <ContentContext.Provider value={{ content, contentLoading, refreshContent }}>
+    <ContentContext.Provider value={{ content, contentLoading, refreshContent, theme, themeSetting }}>
       {children}
     </ContentContext.Provider>
   );

@@ -8,6 +8,7 @@ import {
   deleteDoc, 
   doc, 
   getDoc,
+  onSnapshot,
   getDocs, 
   query, 
   orderBy, 
@@ -63,6 +64,14 @@ export const saveSiteContent = async (content) => {
     updatedAt: serverTimestamp()
   }, { merge: true });
 };
+
+const themeDocument = doc(db, 'siteContent', 'theme');
+
+export const watchThemeSetting = (onChange, onError) =>
+  onSnapshot(themeDocument, (snapshot) => onChange(snapshot.data()?.selection), onError);
+
+export const saveThemeSetting = (selection) =>
+  setDoc(themeDocument, { selection, updatedAt: serverTimestamp() }, { merge: true });
 
 export const trackPageView = async (path) => {
   await addDoc(collection(db, 'pageViews'), {

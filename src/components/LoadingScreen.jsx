@@ -49,7 +49,7 @@ const LoadingScreen = ({ onComplete }) => {
         </div>
       </div>
 
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,60,0,0.05)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgb(var(--fire-primary)/0.05)_0%,transparent_70%)]" />
     </motion.div>
   );
 };
