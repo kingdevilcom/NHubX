@@ -67,12 +67,9 @@ const Developer = () => {
                 <div className="w-28 h-28 rounded-xl overflow-hidden border border-white/10 shadow-md relative z-10 bg-white/[0.02] flex items-center justify-center">
 
                   <img
-                    src="/logo.jpg"
+                    src="/nhubx-logo.png"
                     alt={content.developerName}
-                    className="w-full h-full object-cover grayscale"
-                    onError={(e) => {
-                      e.target.src = '/NHubX2.0.png';
-                    }}
+                    className="w-full h-full object-cover"
                   />
 
                 </div>

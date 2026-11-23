@@ -25,7 +25,7 @@ const Footer = () => {
             className="flex items-center gap-4"
           >
             <img
-              src="/NHubX2.0.png"
+              src="/nhubx-logo.png"
               alt="NHubX Logo"
               className="w-12 h-12 rounded-2xl border border-white/10"
             />

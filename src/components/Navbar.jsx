@@ -35,7 +35,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center gap-2.5 group shrink-0 min-w-fit hover:opacity-95 transition-opacity">
             <div className="relative">
               <img 
-                src="/NHubX2.0.png" 
+                src="/nhubx-logo.png"
                 alt="NHubX Logo" 
                 className="w-8 h-8 sm:w-9 h-9 shadow-md rounded-lg transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-[0_0_12px_rgb(var(--fire-primary)/0.3)] border border-white/[0.08]"
                 onError={(e) => {
