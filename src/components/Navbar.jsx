@@ -3,8 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import DigitalClock from './DigitalClock';
+import { SeasonalLogoMark } from './SeasonalDecorations';
 
-const Navbar = () => {
+const Navbar = ({ season }) => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleRef = useRef(null);
   const [hoveredPath, setHoveredPath] = useState(null);
@@ -43,6 +44,7 @@ const Navbar = () => {
                 }}
               />
               <div className="absolute inset-0 bg-nhubx-glow-primary/0 group-hover:bg-nhubx-glow-primary/5 rounded-lg transition-all duration-300"></div>
+              <SeasonalLogoMark season={season} />
             </div>
             <div className="flex flex-col justify-center">
               <span className="font-bold text-xs sm:text-sm tracking-wide glow-text-primary leading-none uppercase font-mono">

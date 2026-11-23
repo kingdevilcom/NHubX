@@ -20,7 +20,7 @@ const Home = () => {
 
         <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link to="/pricing" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-nhubx-glow-primary hover:bg-nhubx-glow-hover text-white text-xs font-bold uppercase tracking-wider shadow-glow transition-colors">View pricing <ArrowRight size={16} /></Link>
-          <Link to="/projects" className="w-full sm:w-auto inline-flex items-center justify-center px-7 py-3.5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] text-white text-xs font-bold uppercase tracking-wider transition-colors">Explore projects</Link>
+          <Link to="/projects" data-seasonal-snow="" className="w-full sm:w-auto inline-flex items-center justify-center px-7 py-3.5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] text-white text-xs font-bold uppercase tracking-wider transition-colors">Explore projects</Link>
         </div>
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-xs text-gray-500">

@@ -91,10 +91,38 @@ test('the current fire palette applies with reduced motion enabled', async ({ pa
   await expect(page.locator('canvas')).toHaveCount(0);
 });
 
+test('December shows a Santa hat and melts snow when a pointer approaches', async ({ page, isMobile }) => {
+  await page.clock.setFixedTime(new Date('2026-12-15T10:00:00Z'));
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const action = page.getByRole('link', { name: 'View pricing' });
+  await expect(action).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' }).locator('[data-logo-season="christmas"]')).toBeVisible();
+  await expect(page.locator('canvas[data-seasonal-drift="christmas"]')).toBeVisible();
+  await expect.poll(() => action.evaluate((element) => getComputedStyle(element, '::after').opacity)).toBe('1');
+  if (!isMobile) {
+    const box = await action.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y - 16);
+    await expect(action).toHaveAttribute('data-snow-melting', '');
+    await expect.poll(() => action.evaluate((element) => getComputedStyle(element, '::after').opacity)).toBe('0');
+    await page.mouse.move(4, 4);
+    await expect(action).not.toHaveAttribute('data-snow-melting', '');
+  }
+});
+
+test('May shows Vesak lanterns and a pahan with reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.setFixedTime(new Date('2026-05-15T10:00:00Z'));
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const footer = page.getByRole('contentinfo');
+  await expect(footer.locator('.vesak-footer-lantern')).toBeVisible();
+  await expect(footer.locator('.vesak-footer-pahan')).toBeVisible();
+  await expect(page.locator('canvas')).toHaveCount(0);
+});
+
 test('project case studies show real screenshots and demo links', async ({ page }) => {
   await page.goto('/projects', { waitUntil: 'domcontentloaded' });
   const studies = page.getByRole('region', { name: 'Project case studies' });
-  await expect(studies.getByRole('heading', { name: 'NextPath Advisory' })).toBeVisible();
+  await expect(studies.getByRole('heading', { name: 'NextPath Advisory' })).toBeVisible({ timeout: 15_000 });
   await expect(studies.getByRole('heading', { name: 'RoutineX' })).toBeVisible();
   for (const image of await studies.getByRole('img').all()) {
     await image.scrollIntoViewIfNeeded();

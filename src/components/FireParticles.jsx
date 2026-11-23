@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { useContent } from '../context/ContentContext';
+import { createSeasonalDrift } from '../seasonalMotifs';
 
-const FireParticles = ({ zIndex = 1 }) => {
+const FireParticles = ({ zIndex = 1, season }) => {
   const { theme: { emberShift } } = useContent();
   const reduceMotion = useReducedMotion();
   const canvasRef = useRef(null);
@@ -15,6 +16,8 @@ const FireParticles = ({ zIndex = 1 }) => {
     if (!ctx) return;
 
     let animationFrameId;
+    let previousFrame = performance.now();
+    const drawSeason = createSeasonalDrift(season);
     let particles = [];
     const maxParticles = 20; // sparse count for clean background aesthetics
 
@@ -126,8 +129,11 @@ const FireParticles = ({ zIndex = 1 }) => {
       particles.push(new Particle(false));
     }
 
-    const animate = () => {
+    const animate = (time) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const elapsed = Math.min(2, (time - previousFrame) / (1000 / 60));
+      previousFrame = time;
+      drawSeason?.(ctx, canvas.width, canvas.height, time, elapsed);
       
       // Dynamic mouse pointer trailing emission
       if (mouseRef.current.active) {
@@ -160,7 +166,7 @@ const FireParticles = ({ zIndex = 1 }) => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameId = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -168,13 +174,14 @@ const FireParticles = ({ zIndex = 1 }) => {
       document.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [emberShift, reduceMotion]);
+  }, [emberShift, reduceMotion, season]);
 
   if (reduceMotion) return null;
 
   return (
     <canvas 
       aria-hidden="true"
+      data-seasonal-drift={season}
       ref={canvasRef} 
       className="fixed inset-0 w-full h-full pointer-events-none"
       style={{ mixBlendMode: 'screen', zIndex: zIndex }}

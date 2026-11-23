@@ -1,19 +1,19 @@
 const original = { name: 'Original fire', primary: '255 60 0', secondary: '255 122 0', emberShift: 0, hover: '249 115 22' };
 
 export const monthlyFireThemes = [
-  ['January · Emberlight', '249 82 36', '255 135 63', 2],
-  ['February · Rosefire', '246 62 79', '255 118 100', -15],
-  ['March · Copper Spark', '232 93 40', '255 157 83', 4],
-  ['April · Golden Flame', '246 112 7', '255 173 42', 10],
-  ['May · Lantern Glow', '237 102 27', '255 150 69', 8],
-  ['June · Solstice Fire', '242 120 21', '255 186 75', 14],
-  ['July · Sunfire', '255 95 0', '255 155 38', 7],
-  ['August · Kiln Heat', '235 64 34', '252 124 72', -2],
-  ['September · Harvest Ember', '231 104 14', '251 167 58', 11],
-  ['October · Bonfire', '255 79 3', '255 133 20', 3],
-  ['November · Ember Dusk', '245 72 23', '255 140 66', 1],
-  ['December · Hearth Glow', '238 58 46', '255 118 72', -7],
-].map(([name, primary, secondary, emberShift]) => ({ name, primary, secondary, emberShift }));
+  ['January · Emberlight', '249 82 36', '255 135 63', 2, 'starlight'],
+  ['February · Rosefire', '246 62 79', '255 118 100', -15, 'hearts'],
+  ['March · Copper Spark', '232 93 40', '255 157 83', 4, 'petals'],
+  ['April · Golden Flame', '246 112 7', '255 173 42', 10, 'sunrise'],
+  ['May · Lantern Glow', '237 102 27', '255 150 69', 8, 'vesak'],
+  ['June · Solstice Fire', '242 120 21', '255 186 75', 14, 'moonlight'],
+  ['July · Sunfire', '255 95 0', '255 155 38', 7, 'sunfire'],
+  ['August · Kiln Heat', '235 64 34', '252 124 72', -2, 'sparks'],
+  ['September · Harvest Ember', '231 104 14', '251 167 58', 11, 'harvest'],
+  ['October · Bonfire', '255 79 3', '255 133 20', 3, 'bonfire'],
+  ['November · Ember Dusk', '245 72 23', '255 140 66', 1, 'leaves'],
+  ['December · Hearth Glow', '238 58 46', '255 118 72', -7, 'christmas'],
+].map(([name, primary, secondary, emberShift, season]) => ({ name, primary, secondary, emberShift, season }));
 
 const colomboMonth = new Intl.DateTimeFormat('en-US', { month: 'numeric', timeZone: 'Asia/Colombo' });
 const colomboYear = new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone: 'Asia/Colombo' });
