@@ -8,7 +8,17 @@ test.beforeEach(async ({ page }) => {
 test('homepage navigation loads pricing on demand', async ({ page, isMobile }) => {
   const modules = [];
   page.on('request', (request) => modules.push(request.url()));
+  await page.addInitScript(() => {
+    const observer = new MutationObserver(() => {
+      if ([...document.querySelectorAll('[role="status"]')].some((status) => status.textContent.includes('Loading NHubX'))) {
+        document.documentElement.dataset.sawStartupSplash = 'true';
+        observer.disconnect();
+      }
+    });
+    observer.observe(document, { childList: true, subtree: true });
+  });
   await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-saw-startup-splash', 'true');
   await expect(page.getByRole('heading', { name: 'NHubX', exact: true, level: 1 })).toBeVisible();
   expect(modules.some((url) => /\/assets\/Pricing-/.test(url))).toBe(false);
 

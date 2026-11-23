@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import {
   BrowserRouter as Router,
@@ -156,11 +156,17 @@ const AnimatedRoutes = () => {
 
 function AppContent() {
   const { isPreviewOpen, previewUrl, closePreview } = useProject();
+  const [showStartup, setShowStartup] = useState(true);
 
   const location = useLocation();
 
   const isAdminRoute =
     location.pathname === '/admin';
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowStartup(false), 550);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!isAdminRoute) {
@@ -172,11 +178,12 @@ function AppContent() {
 
   return (
     <>
-      <div className="min-h-screen text-white flex flex-col">
-        <FireParticles zIndex={1} />
+      {showStartup && <LoadingScreen />}
+      <div inert={showStartup} className="min-h-screen text-white flex flex-col">
+        {!showStartup && <FireParticles zIndex={1} />}
         {!isAdminRoute && <Navbar />}
         <main className="flex-grow relative z-10">
-          <Suspense fallback={<LoadingScreen />}>
+          <Suspense fallback={showStartup ? null : <LoadingScreen />}>
             <AnimatedRoutes />
           </Suspense>
         </main>
