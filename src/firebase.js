@@ -82,9 +82,8 @@ const recordPageView = (path) =>
 export const trackPageView = (path) => recordPageView(isAnalyticsEventPath(path) ? '/404' : path);
 
 export function trackPricingEvent(event) {
-  const path = pricingEventPaths[event];
-  if (event !== 'open' && event !== 'submitted') return;
-  recordPageView(path).catch((error) => console.error('Unable to record pricing activity:', error));
+  if (event === 'visit' || !Object.hasOwn(pricingEventPaths, event)) return;
+  recordPageView(pricingEventPaths[event]).catch((error) => console.error('Unable to record enquiry activity:', error));
 }
 
 export async function fetchPricingFunnel() {

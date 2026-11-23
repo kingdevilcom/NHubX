@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Check, ChevronRight, Database, Globe2, Loader2, Send, Server, X } from 'lucide-react';
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js/min';
 import { saveMessage, trackPricingEvent } from '../firebase';
 import PricingGuide from '../components/PricingGuide';
+import PricingExamples from '../components/PricingExamples';
+import WhatsAppEnquiry from '../components/WhatsAppEnquiry';
+import { entryPlan } from '../salesOffer';
 import { preparePlanEnquiry } from '../planEnquiry';
 
 const plans = [
   {
-    name: 'Mini', bestFor: 'A one-page website', price: '4,999', description: 'A clean online presence for individuals and small businesses.', hosting: 'LKR 499/year', features: ['Custom one-page website', 'Responsive on every screen', 'About, services and contact sections', 'WhatsApp and social links', 'Basic SEO and animations', 'One revision']
+    ...entryPlan, bestFor: 'A one-page website', description: 'A clean online presence for individuals and small businesses.', hosting: 'LKR 499/year', features: ['Custom one-page website', 'Responsive on every screen', 'About, services and contact sections', 'WhatsApp and social links', 'Basic SEO and animations', 'One revision']
   },
   {
     name: 'Launch Bundle', bestFor: 'A one-page site with domain and search setup', price: '6,999', description: 'Everything needed to launch and become discoverable online.', hosting: 'LKR 499/year', features: ['Everything in Mini', 'Domain connection', 'DNS configuration', 'Google Search Console', 'XML sitemap submission', 'Google Analytics setup']
@@ -28,10 +31,12 @@ const addons = [
   ['Additional page', 'LKR 1,500'], ['Additional revision', 'LKR 500'], ['Domain connection', 'LKR 500'], ['DNS setup', 'LKR 500'], ['Google Search Console', 'LKR 1,000'], ['Sitemap submission', 'LKR 500'], ['Google Analytics', 'LKR 1,000'], ['Content update', 'From LKR 1,000'], ['Professional email setup', 'From LKR 1,500'], ['Annual maintenance', 'LKR 2,500'], ['Google authentication', 'From LKR 5,000'], ['Admin dashboard', 'From LKR 15,000']
 ];
 
-const Pricing = () => {
+const Pricing = ({ ready }) => {
   const dialogRef = useRef(null);
   const countryChanged = useRef(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const trackedPlan = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedPlan, setSelectedPlan] = useState(() => plans.find(({ name }) => name === searchParams.get('plan')) ?? null);
   const [form, setForm] = useState({ name: '', country: 'LK', whatsapp: '', email: '', details: '' });
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
@@ -69,7 +74,7 @@ const Pricing = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedPlan) return undefined;
+    if (!ready || !selectedPlan) return undefined;
 
     const dialog = dialogRef.current;
     const opener = document.activeElement;
@@ -82,6 +87,10 @@ const Pricing = () => {
 
     document.body.style.overflow = 'hidden';
     dialog.showModal();
+    if (trackedPlan.current !== selectedPlan) {
+      trackPricingEvent('open');
+      trackedPlan.current = selectedPlan;
+    }
     if (viewport) {
       sizeDialog();
       viewport.addEventListener('resize', sizeDialog);
@@ -95,16 +104,22 @@ const Pricing = () => {
       document.body.style.overflow = previousOverflow;
       if (opener instanceof HTMLElement) opener.focus({ preventScroll: true });
     };
-  }, [selectedPlan]);
+  }, [ready, selectedPlan]);
   const openPlanForm = (plan) => {
     setSelectedPlan(plan);
-    trackPricingEvent('open');
     setStatus('idle');
     setError('');
   };
 
   const closePlanForm = () => {
-    if (status !== 'loading') setSelectedPlan(null);
+    if (status === 'loading') return;
+    trackedPlan.current = null;
+    setSelectedPlan(null);
+    if (searchParams.has('plan')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('plan');
+      setSearchParams(next, { replace: true });
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -152,9 +167,12 @@ const Pricing = () => {
               <ul className="space-y-3 flex-1">{plan.features.map((feature) => <li key={feature} className="flex items-start gap-2 text-xs text-gray-400"><Check size={14} className="text-nhubx-glow-primary shrink-0 mt-0.5" />{feature}</li>)}</ul>
               <div className="mt-6 pt-4 border-t border-white/[0.06]"><p className="text-[10px] uppercase tracking-wider text-gray-600">Hosting</p><p className="text-sm font-semibold mt-1">{plan.hosting}</p></div>
               <button onClick={() => openPlanForm(plan)} className={`mt-5 inline-flex items-center justify-center gap-1 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-colors ${plan.popular ? 'bg-nhubx-glow-primary hover:bg-nhubx-glow-hover' : 'bg-white/[0.05] hover:bg-white/[0.1]'}`}>Choose plan <ChevronRight size={14} /></button>
+              <WhatsAppEnquiry planName={plan.name} source="pricing" className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white" />
             </article>
           ))}
         </div>
+
+        <PricingExamples />
 
         <section className="mt-20 grid lg:grid-cols-2 gap-8">
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8"><h2 className="text-2xl font-bold mb-2">Optional add-ons</h2><p className="text-sm text-gray-500 mb-6">Add only what your project needs.</p><div className="divide-y divide-white/[0.06]">{addons.map(([name, price]) => <div key={name} className="flex items-center justify-between gap-4 py-3 text-sm"><span className="text-gray-400">{name}</span><span className="font-semibold text-white text-right">{price}</span></div>)}</div></div>
@@ -190,6 +208,7 @@ const Pricing = () => {
               <div className="py-8 text-center"><div className="w-14 h-14 mx-auto mb-5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center"><Check className="text-green-400" /></div><h3 className="text-2xl font-bold">Enquiry received</h3><p className="text-gray-500 mt-3 max-w-sm mx-auto">Thank you. NHubX can contact you using the details you provided.</p><button onClick={closePlanForm} className="mt-7 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-semibold">Close</button></div>
             ) : (
               <form onSubmit={handleSubmit} onInput={(event) => event.target.setCustomValidity?.('')} className="space-y-4 sm:space-y-5">
+                <WhatsAppEnquiry planName={selectedPlan.name} source="pricing" className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 text-sm font-semibold hover:bg-white/5" />
                 <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Your name</span><input required name="name" maxLength="80" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Enter your name" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
                 <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
                   <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">WhatsApp number</span><div className="flex flex-col min-[420px]:flex-row rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-nhubx-glow-primary/60 overflow-hidden"><select aria-label="Country calling code" value={form.country} onChange={(event) => { countryChanged.current = true; event.currentTarget.form.elements.whatsapp.setCustomValidity(''); setForm({ ...form, country: event.target.value }); }} className="w-full min-[420px]:w-[46%] min-h-12 border-b min-[420px]:border-b-0 min-[420px]:border-r border-white/10 bg-[#101010] px-3 text-sm text-gray-300 outline-none">{countryOptions.map(({ country, name, dialCode }) => <option key={country} value={country}>{name} (+{dialCode})</option>)}</select><input required name="whatsapp" aria-label="WhatsApp number" type="tel" inputMode="tel" maxLength="20" autoComplete="tel-national" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} placeholder="7X XXX XXXX" className="min-w-0 flex-1 min-h-12 bg-transparent px-3 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none" /></div></label>

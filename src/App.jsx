@@ -51,7 +51,7 @@ function PageLoading() {
   );
 }
 
-const AnimatedRoutes = () => {
+const AnimatedRoutes = ({ startupComplete }) => {
   const location = useLocation();
 
   const isAdminRoute = location.pathname === '/admin';
@@ -103,7 +103,7 @@ const AnimatedRoutes = () => {
           path="/pricing"
           element={
             <PageWrapper>
-              <Pricing />
+              <Pricing ready={startupComplete} />
             </PageWrapper>
           }
         />
@@ -190,7 +190,7 @@ function AppContent() {
         {!isAdminRoute && <Navbar />}
         <main className="flex-grow relative z-10">
           <Suspense fallback={showStartup ? null : <PageLoading />}>
-            <AnimatedRoutes />
+            <AnimatedRoutes startupComplete={!showStartup} />
           </Suspense>
         </main>
         {!isAdminRoute && <Footer />}

@@ -153,7 +153,7 @@ const PrivacyPolicy = () => {
               to improve user experience, monitor traffic,
               and optimize system performance.
 
-              Pricing analytics record page visits, enquiry form opens, and successful submissions.
+              Enquiry analytics record pricing page visits, form opens, successful submissions, and WhatsApp link clicks.
               The analytics records do not include names, email addresses, phone numbers, or enquiry text.
 
             </p>

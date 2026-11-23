@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fireThemeVariables, monthlyFireThemes, nextFireThemeChange, resolveFireTheme } from '../src/fireTheme.js';
 import { preparePlanEnquiry } from '../src/planEnquiry.js';
-import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPaths } from '../src/enquiryTracking.js';
+import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPaths, summarizeRecentEnquiries } from '../src/enquiryTracking.js';
+import { entryPlan, whatsappEnquiryUrl } from '../src/salesOffer.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
   assert.equal(new Set(monthlyFireThemes.map(({ primary }) => primary)).size, 12);
@@ -68,4 +69,23 @@ test('pricing interaction paths are fixed and excluded from ordinary view totals
   assert.equal(isAnalyticsEventPath(pricingEventPaths.visit), false);
   assert.equal(isAnalyticsEventPath(pricingEventPaths.open), true);
   assert.equal(isAnalyticsEventPath(pricingEventPaths.submitted), true);
+  assert.equal(isAnalyticsEventPath(pricingEventPaths.whatsappHome), true);
+  assert.equal(isAnalyticsEventPath(pricingEventPaths.whatsappPricing), true);
+});
+
+test('recent enquiry ratios use the same date range and exclude WhatsApp clicks', () => {
+  const now = new Date('2026-11-23T12:00:00Z');
+  const event = (eventName, date = now) => ({ path: pricingEventPaths[eventName], timestamp: { toMillis: () => date.getTime() } });
+  const activity = ['visit', 'visit', 'open', 'submitted', 'whatsappHome', 'whatsappPricing'].map((name) => event(name));
+  activity.push(event('visit', new Date('2026-11-15T12:00:00Z')));
+  assert.deepEqual(summarizeRecentEnquiries(activity, now), { opensPer100Visits: 50, submissionsPer100Opens: 100 });
+  assert.deepEqual(summarizeRecentEnquiries([], now), { opensPer100Visits: null, submissionsPer100Opens: null });
+});
+
+test('WhatsApp uses the existing business number and prefills the selected plan', () => {
+  const url = new URL(whatsappEnquiryUrl(entryPlan.name));
+  assert.equal(url.hostname, 'wa.me');
+  assert.equal(url.pathname, '/94740356525');
+  assert.match(url.searchParams.get('text'), /Mini website plan/);
+  assert.match(new URL(whatsappEnquiryUrl('Launch Bundle')).searchParams.get('text'), /Launch Bundle website plan/);
 });

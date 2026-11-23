@@ -20,7 +20,7 @@ test('homepage navigation loads pricing on demand', async ({ page, isMobile }) =
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-saw-startup-splash', 'true');
-  await expect(page.getByRole('heading', { name: 'NHubX', exact: true, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Custom websites for Sri Lankan small businesses', level: 1 })).toBeVisible();
   expect(modules.some((url) => /\/assets\/Pricing-/.test(url))).toBe(false);
 
   if (isMobile) {
@@ -112,4 +112,27 @@ test('pricing comparison and FAQs clarify the plan costs and handover', async ({
   const question = page.getByText('Who owns the website and its accounts?', { exact: true });
   await question.click();
   await expect(page.getByText(/proposal will spell out what files and account access/)).toBeVisible();
+});
+
+test('homepage turns a starting-price offer into a Mini quote or WhatsApp enquiry', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const main = page.getByRole('main');
+  await expect(main.getByText('LKR 4,999', { exact: true })).toBeVisible();
+  await expect(main.getByRole('link', { name: /NextPath Advisory live demo/ })).toHaveAttribute('href', 'https://nextpath.profhelper.com');
+  const whatsapp = new URL(await main.getByRole('link', { name: 'Chat on WhatsApp' }).getAttribute('href'));
+  expect(whatsapp.origin).toBe('https://wa.me');
+  expect(whatsapp.searchParams.get('text')).toContain('Mini website plan');
+
+  await main.getByRole('link', { name: 'Get a quote' }).click();
+  await expect(page).toHaveURL(/\/pricing\?plan=Mini$/);
+  const dialog = page.getByRole('dialog', { name: 'Mini' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('link', { name: 'Chat on WhatsApp' })).toHaveAttribute('href', whatsapp.href);
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL(/\/pricing$/);
+  const examples = page.getByRole('region', { name: 'See what we can build' });
+  await expect(examples.getByRole('heading', { name: 'RoutineX' })).toBeVisible();
+  const starter = main.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Starter', exact: true }) });
+  const starterChat = new URL(await starter.getByRole('link', { name: 'Chat on WhatsApp' }).getAttribute('href'));
+  expect(starterChat.searchParams.get('text')).toContain('Starter website plan');
 });
