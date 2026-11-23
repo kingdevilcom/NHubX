@@ -31,17 +31,13 @@ const Contact = () => {
 
     try {
 
-      await saveMessage(name, email, message);
+      await saveMessage(name.trim(), email.trim(), message.trim());
 
       setStatus('success');
 
       setName('');
       setEmail('');
       setMessage('');
-
-      setTimeout(() => {
-        setStatus('idle');
-      }, 5000);
 
     } catch (error) {
 
@@ -129,6 +125,7 @@ const Contact = () => {
 
                 <input
                   type="text"
+                  maxLength={80}
                   placeholder="Enter your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -148,6 +145,7 @@ const Contact = () => {
 
                 <input
                   type="email"
+                  maxLength={120}
                   placeholder="name@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -169,6 +167,7 @@ const Contact = () => {
 
               <textarea
                 rows="5"
+                maxLength={1900}
                 placeholder="Write your message..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -183,6 +182,7 @@ const Contact = () => {
             {status === 'success' && (
 
               <motion.div
+                role="status"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="p-4 bg-green-500/10 border border-green-500/20 text-green-400 rounded-lg flex items-center gap-3 text-xs font-mono"
@@ -190,7 +190,7 @@ const Contact = () => {
 
                 <CheckCircle2 size={16} />
 
-                Message sent successfully.
+                Message received. We’ll review your request and reply to the email address you provided.
 
               </motion.div>
 

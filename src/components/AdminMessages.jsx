@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Trash2, Clock, User, Copy, Check, ShieldAlert } from 'lucide-react';
 import { fetchMessages, deleteMessage, saveEnquiryStage } from '../firebase';
 import { enquiryStages, getEnquiryPlan, getEnquiryStage } from '../enquiryTracking';
+import { readEnquirySource } from '../leadSource';
+
+function replyLink(email, plan) {
+  const address = encodeURIComponent(email).replace('%40', '@');
+  const subject = encodeURIComponent(plan ? 'Your NHubX ' + plan + ' enquiry' : 'Your NHubX enquiry');
+  return 'mailto:' + address + '?subject=' + subject;
+}
 
 const AdminMessages = () => {
   const [messages, setMessages] = useState([]);
@@ -125,7 +132,11 @@ const AdminMessages = () => {
       {/* Messages Grid/List */}
       <div className="grid gap-4">
         <AnimatePresence mode="popLayout">
-          {visibleMessages.map((msg, idx) => (
+          {visibleMessages.map((msg, idx) => {
+            const { source, message } = readEnquirySource(msg.message);
+            const plan = getEnquiryPlan(message);
+            const reply = replyLink(msg.email, plan);
+            return (
             <motion.div
               key={msg.id}
               initial={{ opacity: 0, y: 20 }}
@@ -143,7 +154,7 @@ const AdminMessages = () => {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-400">
                     <span className="text-gray-500">Routing:</span>
-                    <a href={`mailto:${msg.email}`} className="hover:text-nhubx-glow-primary transition-colors underline">
+                    <a href={reply} className="hover:text-nhubx-glow-primary transition-colors underline">
                       {msg.email}
                     </a>
                     <button
@@ -166,7 +177,10 @@ const AdminMessages = () => {
               </div>
 
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-                <p className="font-semibold text-nhubx-glow-primary">{getEnquiryPlan(msg.message) || 'General enquiry'}</p>
+                <div>
+                  <p className="font-semibold text-nhubx-glow-primary">{plan || 'General enquiry'}</p>
+                  <p className="mt-1 text-xs text-gray-400">{source || 'Source unavailable'}</p>
+                </div>
                 <label className="flex items-center gap-2 text-gray-300">
                   Stage
                   <select aria-label={'Stage for ' + msg.name} value={getEnquiryStage(msg.stage)} disabled={savingStage} onChange={(event) => updateStage(msg.id, event.target.value)} className="rounded-lg border border-white/10 bg-nhubx-bg-secondary px-3 py-2 text-white disabled:opacity-50">
@@ -177,8 +191,11 @@ const AdminMessages = () => {
 
               {/* Message Payload */}
               <div className="bg-black/25 border border-white/5 rounded-lg p-4 font-mono text-xs text-gray-300 leading-relaxed max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {msg.message}
+                {message}
               </div>
+              <a href={reply} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-nhubx-glow-primary px-3 text-sm font-semibold hover:bg-nhubx-glow-hover">
+                <Mail size={15} aria-hidden="true" /> Reply by email
+              </a>
 
               {/* Floating Delete Action */}
               <div className="absolute right-4 bottom-4 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
@@ -193,7 +210,8 @@ const AdminMessages = () => {
                 </motion.button>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </AnimatePresence>
 
         {visibleMessages.length === 0 && (

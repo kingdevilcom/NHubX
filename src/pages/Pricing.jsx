@@ -244,7 +244,7 @@ const Pricing = ({ ready }) => {
               <div className="py-8 text-center">
                 <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10"><Check aria-hidden="true" className="text-green-400" /></div>
                 <h3 ref={successHeading} tabIndex={-1} className="text-2xl font-bold">Enquiry received</h3>
-                <p className="mx-auto mt-3 max-w-sm text-gray-400">Thanks for your interest in the {selectedPlan.name} plan. We’ll reply using the contact details you provided.</p>
+                <p className="mx-auto mt-3 max-w-sm text-gray-400">We’ll review your {selectedPlan.name} enquiry and reply by email. We’ll confirm what you need before sending a quote with the scope, price, and estimated timeline.</p>
                 <button type="button" onClick={closePlanForm} className="mt-7 rounded-xl bg-white/10 px-6 py-3 text-sm font-semibold hover:bg-white/15">Back to pricing</button>
               </div>
             ) : (

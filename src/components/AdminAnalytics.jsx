@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Eye, Clock, RefreshCw, Loader2 } from 'lucide-react';
-import { fetchAnalytics, fetchPricingFunnel } from '../firebase';
+import { fetchAnalytics, fetchLeadSources, fetchPricingFunnel } from '../firebase';
 import { isAnalyticsEventPath, summarizeRecentEnquiries } from '../enquiryTracking';
 
 const activityRate = new Intl.NumberFormat('en', { maximumFractionDigits: 1 });
@@ -11,13 +11,15 @@ const AdminAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [funnel, setFunnel] = useState(null);
+  const [sources, setSources] = useState(null);
 
   const loadAnalytics = async () => {
     setLoading(true);
     setError('');
     try {
-      const [recentViews, pricing] = await Promise.allSettled([fetchAnalytics(), fetchPricingFunnel()]);
+      const [recentViews, pricing, leadActivity] = await Promise.allSettled([fetchAnalytics(), fetchPricingFunnel(), fetchLeadSources()]);
       setFunnel(pricing.status === 'fulfilled' ? pricing.value : null);
+      setSources(leadActivity.status === 'fulfilled' ? leadActivity.value : null);
       if (recentViews.status === 'rejected') throw recentViews.reason;
       setViews(recentViews.value);
     } catch (loadError) {
@@ -63,8 +65,8 @@ const AdminAnalytics = () => {
         <h3 id="pricing-funnel-title" className="text-xl font-bold mb-2">Pricing enquiry activity</h3>
         <p className="text-sm text-gray-400 mb-5">All recorded activity. WhatsApp clicks record when someone opens the chat link.</p>
         {funnel ? (
-          <dl className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            {[['Pricing page views', funnel.visit], ['Enquiry forms opened', funnel.open], ['Enquiries sent', funnel.submitted], ['Home WhatsApp clicks', funnel.whatsappHome], ['Pricing WhatsApp clicks', funnel.whatsappPricing]].map(([label, value]) => (
+          <dl className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {[['Pricing page views', funnel.visit], ['Enquiry forms opened', funnel.open], ['Enquiries sent', funnel.submitted], ['Home WhatsApp clicks', funnel.whatsappHome], ['Pricing WhatsApp clicks', funnel.whatsappPricing], ['Service page WhatsApp clicks', funnel.whatsappService]].map(([label, value]) => (
               <div key={label}><dt className="text-sm text-gray-400">{label}</dt><dd className="mt-1 text-2xl font-bold">{value.toLocaleString()}</dd></div>
             ))}
           </dl>
@@ -78,6 +80,20 @@ const AdminAnalytics = () => {
             ))}
           </dl>
         </div>
+      </section>
+      <section aria-labelledby="lead-source-title" className="glass rounded-2xl border border-white/10 p-6">
+        <h3 id="lead-source-title" className="text-xl font-bold">Lead sources</h3>
+        <p className="mb-4 mt-1 text-sm text-gray-400">First source in each browser session. Enquiries count completed website forms. Counts start when source tracking was added.</p>
+        {sources ? (
+          <table className="w-full text-left text-sm">
+            <thead className="text-gray-300"><tr><th scope="col" className="pb-2">Source</th><th scope="col" className="pb-2 text-right">Visits</th><th scope="col" className="pb-2 text-right">Enquiries</th></tr></thead>
+            <tbody className="divide-y divide-white/10">
+              {sources.map(({ source, label, visits, enquiries }) => (
+                <tr key={source}><th scope="row" className="py-2 font-medium">{label}</th><td className="text-right">{visits.toLocaleString()}</td><td className="text-right">{enquiries.toLocaleString()}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <p className="text-sm text-gray-400">Lead sources could not be loaded.</p>}
       </section>
       <div className="grid sm:grid-cols-3 gap-4">
         {[['Recorded views', stats.totalViews, Eye, 'text-blue-400'], ['Views today', stats.todayViews, Clock, 'text-green-400'], ['Tracked pages', stats.pages.length, BarChart3, 'text-purple-400']].map(([label, value, Icon, color]) => <div key={label} className="glass rounded-2xl border border-white/10 p-6"><Icon className={`${color} mb-4`} /><p className="text-gray-400 text-sm">{label}</p><p className="text-3xl font-bold">{value.toLocaleString()}</p></div>)}

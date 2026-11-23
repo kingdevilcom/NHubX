@@ -12,6 +12,7 @@ export default defineConfig({
       dynamicRoutes: [
         '/',
         '/about',
+        '/websites-for-service-businesses',
         '/projects',
         '/pricing',
         '/developer',

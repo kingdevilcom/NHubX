@@ -19,6 +19,7 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 import { enquiryStages, isAnalyticsEventPath, pricingEventPaths } from './enquiryTracking';
+import { currentLeadSource, leadSources, leadSourceEventPath, withLeadSource } from './leadSource';
 
 const firebaseConfig = {
   apiKey: "AIzaSyA-7maf9y-bv8TilNyAhqaGMwPvuhTHPKc",
@@ -86,6 +87,23 @@ export function trackPricingEvent(event) {
   recordPageView(pricingEventPaths[event]).catch((error) => console.error('Unable to record enquiry activity:', error));
 }
 
+export function trackLeadSourceEvent(source, action) {
+  const path = leadSourceEventPath(source, action);
+  if (path) recordPageView(path).catch((error) => console.error('Unable to record lead source:', error));
+}
+
+export async function fetchLeadSources() {
+  const views = collection(db, 'pageViews');
+  const count = async (source, action) => {
+    const snapshot = await getCountFromServer(query(views, where('path', '==', leadSourceEventPath(source, action))));
+    return snapshot.data().count;
+  };
+  return Promise.all(Object.entries(leadSources).map(async ([source, label]) => {
+    const [visits, enquiries] = await Promise.all([count(source, 'visit'), count(source, 'enquiry')]);
+    return { source, label, visits, enquiries };
+  }));
+}
+
 export async function fetchPricingFunnel() {
   const views = collection(db, 'pageViews');
   const counts = await Promise.all(Object.entries(pricingEventPaths).map(async ([event, path]) => {
@@ -109,13 +127,15 @@ export const fetchAnalytics = async () => {
 
 // Save a contact form message
 export const saveMessage = async (name, email, text) => {
+  const source = currentLeadSource();
   try {
     const docRef = await addDoc(collection(db, "messages"), {
       name,
       email,
-      message: text,
+      message: withLeadSource(text, source),
       timestamp: serverTimestamp()
     });
+    trackLeadSourceEvent(source, 'enquiry');
     return docRef.id;
   } catch (error) {
     console.error("Error saving message to Firestore:", error);

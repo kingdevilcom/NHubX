@@ -45,6 +45,7 @@ export default function Home() {
             </div>
           </div>
         </article>
+        <Link to="/websites-for-service-businesses" className="mt-4 inline-block text-sm font-semibold text-gray-300 hover:text-white hover:underline">Websites for service businesses</Link>
       </div>
     </div>
   );

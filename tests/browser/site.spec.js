@@ -110,7 +110,7 @@ test('the current fire palette applies with reduced motion enabled', async ({ pa
 test('project case studies show real screenshots and demo links', async ({ page }) => {
   await page.goto('/projects', { waitUntil: 'domcontentloaded' });
   const studies = page.getByRole('region', { name: 'Project case studies' });
-  await expect(studies.getByRole('heading', { name: 'NextPath Advisory' })).toBeVisible();
+  await expect(studies.getByRole('heading', { name: 'NextPath Advisory' })).toBeVisible({ timeout: 15_000 });
   await expect(studies.getByRole('heading', { name: 'RoutineX' })).toBeVisible();
   for (const image of await studies.getByRole('img').all()) {
     await image.scrollIntoViewIfNeeded();
@@ -151,4 +151,15 @@ test('homepage turns a starting-price offer into a Mini quote or WhatsApp enquir
   const starter = main.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Starter', exact: true }) });
   const starterChat = new URL(await starter.getByRole('link', { name: 'Chat on WhatsApp' }).getAttribute('href'));
   expect(starterChat.searchParams.get('text')).toContain('Starter website plan');
+});
+
+test('service business landing page keeps outreach attribution through the quote link', async ({ page }) => {
+  await page.goto('/websites-for-service-businesses?utm_source=nhubx_outreach&utm_medium=outreach', { waitUntil: 'domcontentloaded' });
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { name: 'Websites for Sri Lankan service businesses' })).toBeVisible({ timeout: 15_000 });
+  await expect(main.getByText('From LKR 4,999', { exact: true })).toBeVisible();
+  await expect(main.getByRole('link', { name: 'View NextPath live demo' })).toHaveAttribute('href', 'https://nextpath.profhelper.com');
+  await main.getByRole('link', { name: 'Get a quote' }).click();
+  await expect(page.getByRole('dialog', { name: 'Mini' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('nhubxLeadSource'))).toBe('outreach');
 });

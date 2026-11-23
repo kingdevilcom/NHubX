@@ -11,7 +11,8 @@ import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
 import { ProjectProvider, useProject } from './context/ProjectContext';
 import { ContentProvider } from './context/ContentContext';
-import { trackPageView } from './firebase';
+import { trackLeadSourceEvent, trackPageView } from './firebase';
+import { captureLeadVisit } from './leadSource';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -22,6 +23,7 @@ import ScrollToTop from './components/ScrollToTop';
 
 import Home from './pages/Home';
 const About = lazy(() => import('./pages/About.jsx'));
+const ServiceBusinessWebsites = lazy(() => import('./pages/ServiceBusinessWebsites.jsx'));
 const Projects = lazy(() => import('./pages/Projects.jsx'));
 const Developer = lazy(() => import('./pages/Developer.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
@@ -80,6 +82,8 @@ const AnimatedRoutes = ({ startupComplete }) => {
             </PageWrapper>
           }
         />
+
+        <Route path="/websites-for-service-businesses" element={<PageWrapper><ServiceBusinessWebsites /></PageWrapper>} />
 
         <Route
           path="/projects"
@@ -174,6 +178,8 @@ function AppContent() {
 
   useEffect(() => {
     if (!isAdminRoute) {
+      const leadSource = captureLeadVisit();
+      if (leadSource) trackLeadSourceEvent(leadSource, 'visit');
       trackPageView(location.pathname).catch((error) => {
         console.error('Unable to record page view:', error);
       });

@@ -155,6 +155,8 @@ const PrivacyPolicy = () => {
 
               Enquiry analytics record pricing page visits, form opens, successful submissions, and WhatsApp link clicks.
               The analytics records do not include names, email addresses, phone numbers, or enquiry text.
+              We use a broad referral category such as Google or social media to understand where enquiries come from.
+              The category is kept for the browser session and does not include the referring URL or campaign text.
 
             </p>
 

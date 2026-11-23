@@ -4,6 +4,8 @@ import { fireThemeVariables, monthlyFireThemes, nextFireThemeChange, resolveFire
 import { preparePlanEnquiry } from '../src/planEnquiry.js';
 import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPaths, summarizeRecentEnquiries } from '../src/enquiryTracking.js';
 import { entryPlan, whatsappEnquiryUrl } from '../src/salesOffer.js';
+import { classifyLeadSource, leadSourceEventPath, readEnquirySource, withLeadSource } from '../src/leadSource.js';
+import { sendEnquiryAlert } from '../functions/enquiryAlert.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
   assert.equal(new Set(monthlyFireThemes.map(({ primary }) => primary)).size, 12);
@@ -90,4 +92,36 @@ test('WhatsApp uses the existing business number and prefills the selected plan'
   assert.equal(url.pathname, '/94740356525');
   assert.match(url.searchParams.get('text'), /Mini website plan/);
   assert.match(new URL(whatsappEnquiryUrl('Launch Bundle')).searchParams.get('text'), /Launch Bundle website plan/);
+});
+
+test('lead attribution stores categories and preserves the original enquiry', () => {
+  assert.equal(classifyLeadSource('?utm_medium=outreach&tracking=personal', 'https://google.lk/search'), 'outreach');
+  assert.equal(classifyLeadSource('', 'https://www.google.lk/search?q=personal'), 'google');
+  assert.equal(classifyLeadSource('', 'https://l.instagram.com/example'), 'social');
+  assert.equal(classifyLeadSource('', 'https://instagram.com.example.test/'), 'referral');
+  assert.equal(classifyLeadSource('', 'https://www.nhubx.com/pricing'), 'direct');
+  assert.equal(classifyLeadSource('', ''), 'direct');
+  assert.equal(leadSourceEventPath('raw campaign string', 'enquiry'), null);
+  assert.equal(leadSourceEventPath('outreach', 'enquiry'), '/_events/lead-source/outreach/enquiry');
+  const message = preparePlanEnquiry(plan, form).message;
+  assert.deepEqual(readEnquirySource(withLeadSource(message, 'google')), { source: 'Google', message });
+  assert.deepEqual(readEnquirySource(message), { source: null, message });
+});
+
+test('enquiry alerts share a five-minute idempotency key and contain only an inbox notice', async () => {
+  const requests = [];
+  const request = async (url, options) => {
+    requests.push({ url, headers: options.headers, body: JSON.parse(options.body) });
+    return { ok: true };
+  };
+  const config = { from: 'alerts@example.com', to: 'owner@example.com', apiKey: 'test-only' };
+  const now = Date.parse('2026-11-23T12:03:00Z');
+  for (const createdAt of ['2026-11-23T12:01:00Z', '2026-11-23T12:02:00Z', '2026-11-23T10:00:00Z']) {
+    await sendEnquiryAlert({ ...config, createdAt }, { now, request });
+  }
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests[0], requests[1]);
+  assert.equal(requests[0].url, 'https://api.resend.com/emails');
+  assert.deepEqual(requests[0].body.to, ['owner@example.com']);
+  assert.match(requests[0].body.text, /https:\/\/www\.nhubx\.com\/admin/);
 });

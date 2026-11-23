@@ -18,6 +18,7 @@ export const pricingEventPaths = Object.freeze({
   submitted: '/_events/pricing/submitted',
   whatsappHome: '/_events/enquiry/whatsapp-home',
   whatsappPricing: '/_events/enquiry/whatsapp-pricing',
+  whatsappService: '/_events/enquiry/whatsapp-service',
 });
 
 export const isAnalyticsEventPath = (path) => path?.startsWith('/_events/');
