@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { useContent } from '../context/ContentContext';
 
 const FireParticles = ({ zIndex = 1 }) => {
   const { theme: { emberShift } } = useContent();
+  const reduceMotion = useReducedMotion();
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false, lastX: 0, lastY: 0 });
 
@@ -78,7 +80,7 @@ const FireParticles = ({ zIndex = 1 }) => {
           const dy = mouseRef.current.y - this.y;
           const distance = Math.hypot(dx, dy);
           
-          if (distance < 200) {
+          if (distance > 0 && distance < 200) {
             const force = (200 - distance) / 200; // gravity scaling factor
             this.speedX += (dx / distance) * force * 0.06;
             this.speedY += (dy / distance) * force * 0.06;
@@ -166,10 +168,13 @@ const FireParticles = ({ zIndex = 1 }) => {
       document.removeEventListener('mouseleave', handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [emberShift]);
+  }, [emberShift, reduceMotion]);
+
+  if (reduceMotion) return null;
 
   return (
     <canvas 
+      aria-hidden="true"
       ref={canvasRef} 
       className="fixed inset-0 w-full h-full pointer-events-none"
       style={{ mixBlendMode: 'screen', zIndex: zIndex }}

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { watchThemeSetting } from '../firebase';
-import { normalizeThemeSetting, resolveFireTheme } from '../fireTheme';
+import { fireThemeVariables, normalizeThemeSetting, resolveFireTheme } from '../fireTheme';
 
 export function useSiteTheme() {
   const [setting, setSetting] = useState(null);
@@ -26,11 +26,10 @@ export function useSiteTheme() {
   }, []);
 
   useLayoutEffect(() => {
-    const { primary, secondary, hover = secondary } = theme;
     const root = document.documentElement;
-    root.style.setProperty('--fire-primary', primary);
-    root.style.setProperty('--fire-secondary', secondary);
-    root.style.setProperty('--fire-hover', hover);
+    for (const [name, value] of Object.entries(fireThemeVariables(theme))) {
+      root.style.setProperty(name, value);
+    }
   }, [theme]);
 
   return { theme, themeSetting: setting };

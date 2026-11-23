@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ChevronRight, Database, Globe2, Loader2, Send, Server, X } from 'lucide-react';
 import { getCountries, getCountryCallingCode } from 'libphonenumber-js/min';
 import { saveMessage } from '../firebase';
+import { preparePlanEnquiry } from '../planEnquiry';
 
 const plans = [
   {
@@ -27,6 +28,8 @@ const addons = [
 ];
 
 const Pricing = () => {
+  const dialogRef = useRef(null);
+  const countryChanged = useRef(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [form, setForm] = useState({ name: '', country: 'LK', whatsapp: '', email: '', details: '' });
   const [status, setStatus] = useState('idle');
@@ -56,7 +59,7 @@ const Pricing = () => {
         detectedCountry = localeParts.length > 1 ? localeParts.at(-1).toUpperCase() : null;
       }
 
-      if (detectedCountry && getCountries().includes(detectedCountry)) {
+      if (!countryChanged.current && detectedCountry && getCountries().includes(detectedCountry)) {
         setForm((current) => ({ ...current, country: detectedCountry }));
       }
     };
@@ -65,10 +68,33 @@ const Pricing = () => {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = selectedPlan ? 'hidden' : 'unset';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [selectedPlan]);
+    if (!selectedPlan) return undefined;
 
+    const dialog = dialogRef.current;
+    const opener = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const viewport = window.visualViewport;
+    const sizeDialog = () => {
+      dialog.style.setProperty('--enquiry-viewport-height', viewport.height + 'px');
+      dialog.style.setProperty('--enquiry-viewport-top', viewport.offsetTop + 'px');
+    };
+
+    document.body.style.overflow = 'hidden';
+    dialog.showModal();
+    if (viewport) {
+      sizeDialog();
+      viewport.addEventListener('resize', sizeDialog);
+      viewport.addEventListener('scroll', sizeDialog);
+    }
+
+    return () => {
+      viewport?.removeEventListener('resize', sizeDialog);
+      viewport?.removeEventListener('scroll', sizeDialog);
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      if (opener instanceof HTMLElement) opener.focus({ preventScroll: true });
+    };
+  }, [selectedPlan]);
   const openPlanForm = (plan) => {
     setSelectedPlan(plan);
     setStatus('idle');
@@ -81,19 +107,20 @@ const Pricing = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (status === 'loading') return;
+
+    const enquiry = preparePlanEnquiry(selectedPlan, form);
+    if (enquiry.error) {
+      const field = event.currentTarget.elements.namedItem(enquiry.field);
+      field.setCustomValidity(enquiry.error);
+      field.reportValidity();
+      return;
+    }
+
     setStatus('loading');
     setError('');
-
-    const enquiry = [
-      `Pricing plan enquiry: ${selectedPlan.name}`,
-      `Development price: LKR ${selectedPlan.price}`,
-      `Hosting: ${selectedPlan.hosting}`,
-      `WhatsApp: +${getCountryCallingCode(form.country)} ${form.whatsapp}`,
-      form.details ? `Project details: ${form.details}` : 'Project details: Not provided'
-    ].join('\n');
-
     try {
-      await saveMessage(form.name.trim(), form.email.trim(), enquiry);
+      await saveMessage(enquiry.name, enquiry.email, enquiry.message);
       setStatus('success');
       setForm((current) => ({ name: '', country: current.country, whatsapp: '', email: '', details: '' }));
     } catch (submitError) {
@@ -140,9 +167,14 @@ const Pricing = () => {
       </div>
 
       {selectedPlan && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6">
-          <button aria-label="Close enquiry form" onClick={closePlanForm} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-          <div role="dialog" aria-modal="true" aria-labelledby="plan-form-title" className="relative w-full max-w-xl max-h-[94dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0b0b0b] px-5 py-6 sm:p-8 shadow-2xl [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
+        <dialog
+          ref={dialogRef}
+          aria-labelledby="plan-form-title"
+          className="pricing-dialog fixed inset-x-0 bottom-auto m-0 h-full w-full max-w-none bg-transparent text-white open:flex items-end sm:items-center justify-center p-0 sm:p-6"
+          onClick={(event) => { if (event.target === event.currentTarget) closePlanForm(); }}
+          onCancel={(event) => { event.preventDefault(); closePlanForm(); }}
+        >
+          <div className="relative w-full max-w-xl max-h-[94%] sm:max-h-[90%] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0b0b0b] px-5 py-6 sm:p-8 shadow-2xl [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
             <div className="sm:hidden w-10 h-1 rounded-full bg-white/15 mx-auto mb-5" />
             <div className="flex items-start justify-between gap-3 mb-6 sm:mb-7">
               <div className="min-w-0"><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-nhubx-glow-primary mb-2">Plan enquiry</p><h2 id="plan-form-title" className="text-2xl sm:text-3xl font-black truncate">{selectedPlan.name}</h2><p className="text-xs sm:text-sm text-gray-500 mt-1">LKR {selectedPlan.price} · Hosting {selectedPlan.hosting}</p></div>
@@ -152,20 +184,20 @@ const Pricing = () => {
             {status === 'success' ? (
               <div className="py-8 text-center"><div className="w-14 h-14 mx-auto mb-5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center"><Check className="text-green-400" /></div><h3 className="text-2xl font-bold">Enquiry received</h3><p className="text-gray-500 mt-3 max-w-sm mx-auto">Thank you. NHubX can contact you using the details you provided.</p><button onClick={closePlanForm} className="mt-7 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-semibold">Close</button></div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Your name</span><input required maxLength="80" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Enter your name" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
+              <form onSubmit={handleSubmit} onInput={(event) => event.target.setCustomValidity?.('')} className="space-y-4 sm:space-y-5">
+                <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Your name</span><input required name="name" maxLength="80" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Enter your name" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
                 <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
-                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">WhatsApp number</span><div className="flex flex-col min-[420px]:flex-row rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-nhubx-glow-primary/60 overflow-hidden"><select aria-label="Country calling code" value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} className="w-full min-[420px]:w-[46%] min-h-12 border-b min-[420px]:border-b-0 min-[420px]:border-r border-white/10 bg-[#101010] px-3 text-sm text-gray-300 outline-none">{countryOptions.map(({ country, name, dialCode }) => <option key={country} value={country}>{name} (+{dialCode})</option>)}</select><input required type="tel" inputMode="tel" maxLength="20" autoComplete="tel-national" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} placeholder="7X XXX XXXX" pattern="[0-9 ()-]{6,20}" className="min-w-0 flex-1 min-h-12 bg-transparent px-3 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none" /></div></label>
-                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Email address</span><input required type="email" maxLength="120" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@example.com" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
+                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">WhatsApp number</span><div className="flex flex-col min-[420px]:flex-row rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-nhubx-glow-primary/60 overflow-hidden"><select aria-label="Country calling code" value={form.country} onChange={(event) => { countryChanged.current = true; event.currentTarget.form.elements.whatsapp.setCustomValidity(''); setForm({ ...form, country: event.target.value }); }} className="w-full min-[420px]:w-[46%] min-h-12 border-b min-[420px]:border-b-0 min-[420px]:border-r border-white/10 bg-[#101010] px-3 text-sm text-gray-300 outline-none">{countryOptions.map(({ country, name, dialCode }) => <option key={country} value={country}>{name} (+{dialCode})</option>)}</select><input required name="whatsapp" aria-label="WhatsApp number" type="tel" inputMode="tel" maxLength="20" autoComplete="tel-national" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} placeholder="7X XXX XXXX" className="min-w-0 flex-1 min-h-12 bg-transparent px-3 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none" /></div></label>
+                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Email address</span><input required name="email" type="email" maxLength="120" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@example.com" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
                 </div>
                 <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Project details <span className="text-gray-600">(optional)</span></span><textarea rows="3" maxLength="1000" value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder="Tell us what you want to build..." className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60 sm:min-h-28" /></label>
-                {error && <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+                {error && <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
                 <p className="text-[11px] leading-relaxed text-gray-600">By submitting, you allow NHubX to contact you about this project through WhatsApp or email.</p>
                 <button type="submit" disabled={status === 'loading'} className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-nhubx-glow-primary hover:bg-nhubx-glow-hover disabled:opacity-60 px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition-colors">{status === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Sending enquiry</> : <><Send size={16} /> Send enquiry</>}</button>
               </form>
             )}
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );

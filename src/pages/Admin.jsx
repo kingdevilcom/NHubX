@@ -10,7 +10,7 @@ import {
   RefreshCw,
   Loader2
 } from 'lucide-react';
-import { useAdmin } from '../context/AdminContext';
+import { AdminProvider, useAdmin } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
 import AdminAnalytics from '../components/AdminAnalytics';
 import AdminProjectManager from '../components/AdminProjectManager';
@@ -195,4 +195,6 @@ const Admin = () => {
   );
 };
 
-export default Admin;
+export default function AdminPage() {
+  return <AdminProvider><Admin /></AdminProvider>;
+}

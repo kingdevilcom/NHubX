@@ -42,9 +42,20 @@
 }
 
 :focus-visible {
-  outline: 2px solid rgb(var(--fire-primary));
+  outline: 2px solid rgb(var(--fire-secondary));
   outline-offset: 3px;
 }
+
+.text-gray-500 { color: #a1a1aa; }
+.text-gray-600 { color: #92929d; }
+.bg-nhubx-glow-primary, .text-fire-ink { color: #100600; }
+
+.pricing-dialog {
+  max-height: var(--enquiry-viewport-height, 100dvh);
+  top: var(--enquiry-viewport-top, 0px);
+}
+
+.pricing-dialog::backdrop { background: rgb(0 0 0 / .8); backdrop-filter: blur(4px); }
 
 @media (prefers-reduced-motion: reduce) {
   html {

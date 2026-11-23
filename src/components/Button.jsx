@@ -5,7 +5,7 @@ const Button = ({ children, onClick, className = "", variant = "primary", type =
   const variants = {
     primary: "bg-nhubx-glow-primary text-white shadow-glow hover:shadow-glow-lg hover:bg-nhubx-glow-primary/95 border border-nhubx-glow-primary/10 active:scale-98",
     secondary: "bg-white/[0.02] border border-white/[0.08] text-white hover:bg-white/[0.05] hover:border-nhubx-glow-primary/20",
-    outline: "border border-nhubx-glow-primary/40 text-nhubx-glow-primary hover:bg-nhubx-glow-primary hover:text-white shadow-[0_0_12px_rgb(var(--fire-primary)/0.08)] hover:shadow-glow"
+    outline: "border border-nhubx-glow-primary/40 text-nhubx-glow-primary hover:bg-nhubx-glow-primary hover:text-[#100600] shadow-[0_0_12px_rgb(var(--fire-primary)/0.08)] hover:shadow-glow"
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
@@ -6,6 +6,7 @@ import DigitalClock from './DigitalClock';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const toggleRef = useRef(null);
   const [hoveredPath, setHoveredPath] = useState(null);
   const location = useLocation();
   const links = [
@@ -18,7 +19,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="fixed top-3 md:top-4 left-0 right-0 z-50 flex justify-center pointer-events-none">
+    <nav aria-label="Main navigation" onKeyDown={(event) => { if (event.key === 'Escape' && isOpen) { setIsOpen(false); toggleRef.current?.focus(); } }} className="fixed top-3 md:top-4 left-0 right-0 z-50 flex justify-center pointer-events-none">
       <motion.div 
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -64,9 +65,10 @@ const Navbar = () => {
                 <Link 
                   key={link.name}
                   to={link.path}
+                  aria-current={isActive ? 'page' : undefined}
                   onMouseEnter={() => setHoveredPath(link.path)}
                   className={`relative px-3.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-colors duration-300 whitespace-nowrap ${
-                    isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                    isActive ? 'text-fire-ink' : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   {/* Sliding transparent glassy hover capsule */}
@@ -93,23 +95,21 @@ const Navbar = () => {
 
         {/* Right Side: Join CTA Button & Hamburger */}
         <div className="flex items-center gap-3">
-          <Link to="/contact" className="hidden md:block">
-            <motion.button 
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative overflow-hidden group bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-md shadow-nhubx-glow-primary/10 active:scale-98 transition-all duration-300"
-            >
-              <span className="relative z-10">Let's Talk</span>
-              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            </motion.button>
+          <Link to="/contact" className="hidden md:block relative overflow-hidden group bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-md shadow-nhubx-glow-primary/10 active:scale-98 transition-all duration-300">
+            <span className="relative z-10">Let's Talk</span>
+            <span aria-hidden="true" className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           </Link>
           
           {/* Hamburger button */}
           <motion.button 
+            ref={toggleRef}
+            aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
             onClick={() => setIsOpen(!isOpen)}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
-            className="md:hidden text-gray-300 hover:text-nhubx-glow-primary p-2 hover:bg-white/5 rounded-lg border border-white/5 hover:border-nhubx-glow-primary/20 transition-all"
+            className="md:hidden min-w-11 min-h-11 flex items-center justify-center text-gray-300 hover:text-nhubx-glow-primary p-2 hover:bg-white/5 rounded-lg border border-white/5 hover:border-nhubx-glow-primary/20 transition-all"
           >
             {isOpen ? <X size={16} /> : <Menu size={16} />}
           </motion.button>
@@ -124,6 +124,7 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto', y: 0 }}
             exit={{ opacity: 0, height: 0, y: -10 }}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
+            id="mobile-navigation"
             className="md:hidden mt-1.5 glass rounded-xl overflow-hidden border border-white/[0.08] shadow-2xl bg-[#080808]/95 backdrop-blur-2xl"
           >
             <div className="flex flex-col p-3 gap-1">
@@ -134,7 +135,8 @@ const Navbar = () => {
                     key={link.name}
                     to={link.path}
                     onClick={() => setIsOpen(false)}
-                    className={`px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center min-h-11 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border ${
                       isActive 
                         ? 'text-nhubx-glow-primary bg-nhubx-glow-primary/5 border-nhubx-glow-primary/20 shadow-[inset_0_0_8px_rgb(var(--fire-primary)/0.05)]'
                         : 'text-gray-300 border-transparent hover:bg-white/5 hover:text-white'
@@ -144,15 +146,7 @@ const Navbar = () => {
                   </Link>
                 );
               })}
-              <Link to="/contact" onClick={() => setIsOpen(false)} className="pt-1.5">
-                <motion.button 
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-md shadow-nhubx-glow-primary/10 transition-all"
-                >
-                  Let's Talk
-                </motion.button>
-              </Link>
+              <Link to="/contact" onClick={() => setIsOpen(false)} className="flex items-center justify-center min-h-11 mt-1.5 w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 text-white py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-md shadow-nhubx-glow-primary/10 transition-all">Let's Talk</Link>
             </div>
           </motion.div>
         )}

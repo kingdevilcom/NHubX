@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 
 import {
   BrowserRouter as Router,
@@ -7,10 +7,9 @@ import {
   useLocation,
 } from 'react-router-dom';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
 import { ProjectProvider, useProject } from './context/ProjectContext';
-import { AdminProvider } from './context/AdminContext';
 import { ContentProvider } from './context/ContentContext';
 import { trackPageView } from './firebase';
 
@@ -22,16 +21,16 @@ import FireParticles from './components/FireParticles';
 import ScrollToTop from './components/ScrollToTop';
 
 import Home from './pages/Home';
-import About from './pages/About';
-import Projects from './pages/Projects';
-import Developer from './pages/Developer';
-import Contact from './pages/Contact';
-import Pricing from './pages/Pricing';
-import Admin from './pages/Admin';
-import NotFound from './pages/NotFound';
+const About = lazy(() => import('./pages/About.jsx'));
+const Projects = lazy(() => import('./pages/Projects.jsx'));
+const Developer = lazy(() => import('./pages/Developer.jsx'));
+const Contact = lazy(() => import('./pages/Contact.jsx'));
+const Pricing = lazy(() => import('./pages/Pricing.jsx'));
+const Admin = lazy(() => import('./pages/Admin.jsx'));
+const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsAndConditions from './pages/TermsAndConditions';
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy.jsx'));
+const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions.jsx'));
 
 const PageWrapper = ({ children }) => (
   <motion.div
@@ -157,7 +156,6 @@ const AnimatedRoutes = () => {
 
 function AppContent() {
   const { isPreviewOpen, previewUrl, closePreview } = useProject();
-  const [isLoading, setIsLoading] = useState(true);
 
   const location = useLocation();
 
@@ -174,36 +172,16 @@ function AppContent() {
 
   return (
     <>
-      <AnimatePresence mode="wait">
-        {isLoading && (
-          <LoadingScreen
-            onComplete={() =>
-              setIsLoading(false)
-            }
-          />
-        )}
-      </AnimatePresence>
-
-      {!isLoading && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="min-h-screen text-white flex flex-col"
-        >
-
-          <FireParticles zIndex={1} />
-
-          {!isAdminRoute && <Navbar />}
-
-          <main className="flex-grow relative z-10">
+      <div className="min-h-screen text-white flex flex-col">
+        <FireParticles zIndex={1} />
+        {!isAdminRoute && <Navbar />}
+        <main className="flex-grow relative z-10">
+          <Suspense fallback={<LoadingScreen />}>
             <AnimatedRoutes />
-          </main>
-
-          {!isAdminRoute && <Footer />}
-
-        </motion.div>
-      )}
-
+          </Suspense>
+        </main>
+        {!isAdminRoute && <Footer />}
+      </div>
       <WebPreviewModal isOpen={isPreviewOpen} url={previewUrl} onClose={closePreview} />
 
     </>
@@ -218,11 +196,9 @@ function App() {
       <ScrollToTop />
 
       <ProjectProvider>
-        <AdminProvider>
-          <ContentProvider>
-            <AppContent />
-          </ContentProvider>
-        </AdminProvider>
+        <ContentProvider>
+          <MotionConfig reducedMotion="user"><AppContent /></MotionConfig>
+        </ContentProvider>
       </ProjectProvider>
 
     </Router>

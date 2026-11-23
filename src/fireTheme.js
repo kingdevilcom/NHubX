@@ -16,6 +16,18 @@ export const monthlyFireThemes = [
 ].map(([name, primary, secondary, emberShift]) => ({ name, primary, secondary, emberShift }));
 
 const colomboMonth = new Intl.DateTimeFormat('en-US', { month: 'numeric', timeZone: 'Asia/Colombo' });
+const colomboYear = new Intl.DateTimeFormat('en-US', { year: 'numeric', timeZone: 'Asia/Colombo' });
+
+export function nextFireThemeChange(date = new Date()) {
+  const year = Number(colomboYear.format(date));
+  const month = Number(colomboMonth.format(date));
+  return new Date(Date.UTC(year, month, 1, 0, -330));
+}
+
+export function fireThemeVariables(theme) {
+  const { primary, secondary, hover = secondary } = theme;
+  return { '--fire-primary': primary, '--fire-secondary': secondary, '--fire-hover': hover };
+}
 
 export function normalizeThemeSetting(setting) {
   if (setting === 'original') return setting;
