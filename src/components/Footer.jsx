@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { SeasonalLogoMark, VesakFooterDecorations } from './SeasonalDecorations';
 
 import {
   FaGithub,
@@ -8,10 +7,9 @@ import {
   FaFacebookF,
 } from 'react-icons/fa';
 
-const Footer = ({ season }) => {
+const Footer = () => {
   return (
     <footer className="w-[95%] sm:w-[92%] md:w-[90%] max-w-7xl mx-auto mt-20 mb-8 px-6 md:px-10 py-8 rounded-[28px] border border-white/[0.06] bg-black/50 backdrop-blur-2xl relative overflow-hidden">
-      {season === 'vesak' && <VesakFooterDecorations />}
 
       {/* glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[180px] bg-nhubx-glow-primary/[0.04] blur-[120px] rounded-full pointer-events-none" />
@@ -26,14 +24,11 @@ const Footer = ({ season }) => {
             to="/"
             className="flex items-center gap-4"
           >
-            <div className="relative">
-              <img
-                src="/nhubx-logo.png"
-                alt="NHubX Logo"
-                className="w-12 h-12 rounded-2xl border border-white/10"
-              />
-              <SeasonalLogoMark season={season} />
-            </div>
+            <img
+              src="/nhubx-logo.png"
+              alt="NHubX Logo"
+              className="w-12 h-12 rounded-2xl border border-white/10"
+            />
 
             <div>
               <h2 className="text-xl font-bold text-white">

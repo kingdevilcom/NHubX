@@ -10,7 +10,7 @@ import {
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion';
 
 import { ProjectProvider, useProject } from './context/ProjectContext';
-import { ContentProvider, useContent } from './context/ContentContext';
+import { ContentProvider } from './context/ContentContext';
 import { trackPageView } from './firebase';
 
 import Navbar from './components/Navbar';
@@ -19,7 +19,6 @@ import LoadingScreen from './components/LoadingScreen';
 import WebPreviewModal from './components/WebPreviewModal';
 import FireParticles from './components/FireParticles';
 import ScrollToTop from './components/ScrollToTop';
-import { useChristmasMelt } from './components/SeasonalDecorations';
 
 import Home from './pages/Home';
 const About = lazy(() => import('./pages/About.jsx'));
@@ -165,7 +164,6 @@ const AnimatedRoutes = () => {
 
 function AppContent() {
   const { isPreviewOpen, previewUrl, closePreview } = useProject();
-  const { theme } = useContent();
   const [showStartup, setShowStartup] = useState(true);
   const finishStartup = useCallback(() => setShowStartup(false), []);
 
@@ -173,8 +171,6 @@ function AppContent() {
 
   const isAdminRoute =
     location.pathname === '/admin';
-  const season = isAdminRoute ? undefined : theme.season;
-  useChristmasMelt(showStartup ? undefined : season);
 
   useEffect(() => {
     if (!isAdminRoute) {
@@ -189,15 +185,15 @@ function AppContent() {
       <AnimatePresence>
         {showStartup && <LoadingScreen key="startup" onComplete={finishStartup} />}
       </AnimatePresence>
-      <div inert={showStartup} data-season={season} className="min-h-screen text-white flex flex-col">
-        {!showStartup && <FireParticles zIndex={1} season={season} />}
-        {!isAdminRoute && <Navbar season={season} />}
+      <div inert={showStartup} className="min-h-screen text-white flex flex-col">
+        {!showStartup && <FireParticles zIndex={1} />}
+        {!isAdminRoute && <Navbar />}
         <main className="flex-grow relative z-10">
           <Suspense fallback={showStartup ? null : <PageLoading />}>
             <AnimatedRoutes />
           </Suspense>
         </main>
-        {!isAdminRoute && <Footer season={season} />}
+        {!isAdminRoute && <Footer />}
       </div>
       <WebPreviewModal isOpen={isPreviewOpen} url={previewUrl} onClose={closePreview} />
 

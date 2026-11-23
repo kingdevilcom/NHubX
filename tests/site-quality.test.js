@@ -2,14 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { fireThemeVariables, monthlyFireThemes, nextFireThemeChange, resolveFireTheme } from '../src/fireTheme.js';
 import { preparePlanEnquiry } from '../src/planEnquiry.js';
-import { seasonalMotifs } from '../src/seasonalMotifs.js';
 import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPaths } from '../src/enquiryTracking.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
   assert.equal(new Set(monthlyFireThemes.map(({ primary }) => primary)).size, 12);
-  assert.equal(new Set(monthlyFireThemes.map(({ season }) => season)).size, 12);
   for (const [index, theme] of monthlyFireThemes.entries()) {
-    assert.ok(seasonalMotifs[theme.season]);
     assert.equal(resolveFireTheme('auto', new Date(Date.UTC(2026, index, 15))), theme);
     assert.equal(resolveFireTheme(String(index + 1)), theme);
   }
