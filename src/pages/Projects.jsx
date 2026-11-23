@@ -190,7 +190,7 @@ const Projects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-32 pb-24 flex items-center justify-center">
+      <div className="min-h-screen pt-12 sm:pt-16 pb-16 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
 
           <div className="w-12 h-12 rounded-full border-2 border-t-nhubx-glow-primary border-white/5 animate-spin" />
@@ -206,7 +206,7 @@ const Projects = () => {
 
   return (
     <>
-      <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
+      <div className="relative min-h-screen pt-12 sm:pt-16 pb-16 px-4 sm:px-6 overflow-hidden">
 
         {/* background glow */}
         <div className="absolute top-1/4 left-1/4 w-[35rem] h-[35rem] bg-nhubx-glow-primary/[0.02] blur-[120px] rounded-full -z-10" />

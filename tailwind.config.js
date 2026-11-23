@@ -7,10 +7,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        'nhubx-bg-primary': '#0a0a0a',
-        'nhubx-bg-secondary': '#121212',
-        'nhubx-glow-primary': '#ff3c00',
-        'nhubx-glow-secondary': '#ff7a00',
+        'nhubx-bg-primary': 'rgb(var(--fire-background) / <alpha-value>)',
+        'nhubx-bg-secondary': 'rgb(var(--fire-surface) / <alpha-value>)',
+        'nhubx-glow-primary': 'rgb(var(--fire-accent) / <alpha-value>)',
+        'nhubx-glow-secondary': 'rgb(var(--fire-highlight) / <alpha-value>)',
         'nhubx-accent': '#1f1f1f',
       },
       borderRadius: {
@@ -37,8 +37,8 @@ export default {
         },
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(255, 60, 0, 0.3)',
-        'glow-lg': '0 0 40px rgba(255, 60, 0, 0.5)',
+        'glow': '0 0 20px rgb(var(--fire-accent) / .18)',
+        'glow-lg': '0 0 40px rgb(var(--fire-accent) / .25)',
       }
     },
   },

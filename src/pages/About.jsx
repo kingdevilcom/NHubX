@@ -12,7 +12,7 @@ const About = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
+    <div className="relative min-h-screen pt-12 sm:pt-16 pb-16 px-4 sm:px-6 overflow-hidden">
 
       {/* Background Glow */}
       <div className="absolute top-0 right-10 w-96 h-96 bg-nhubx-glow-primary/[0.02] blur-[120px] rounded-full -z-10 animate-glow-pulse" />
