@@ -57,7 +57,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="relative min-h-screen pt-12 sm:pt-16 pb-16 px-4 sm:px-6 overflow-hidden">
+    <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
 
       {/* glow bg */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[35rem] h-[35rem] bg-nhubx-glow-primary/5 blur-[120px] rounded-full -z-10" />

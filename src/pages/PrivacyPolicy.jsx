@@ -7,7 +7,7 @@ const PrivacyPolicy = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen pt-12 sm:pt-16 pb-16 px-4 sm:px-6 overflow-hidden">
+    <div className="relative min-h-screen pt-32 pb-24 px-4 sm:px-6 overflow-hidden">
 
       {/* glow */}
       <div className="absolute top-0 right-10 w-96 h-96 bg-nhubx-glow-primary/[0.03] blur-[120px] rounded-full -z-10" />
