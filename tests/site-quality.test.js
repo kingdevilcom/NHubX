@@ -48,6 +48,8 @@ const form = { name: '  Test Visitor  ', country: 'LK', whatsapp: '077 123 4567'
 test('pricing enquiries validate input, normalize the number, and retain the requested plan', () => {
   assert.equal(preparePlanEnquiry(plan, { ...form, name: '  ' }).field, 'name');
   assert.equal(preparePlanEnquiry(plan, { ...form, whatsapp: '12345' }).field, 'whatsapp');
+  assert.equal(preparePlanEnquiry(plan, { ...form, email: 'visitor@' }).field, 'email');
+  assert.match(preparePlanEnquiry(plan, { ...form, whatsapp: '' }).message, /WhatsApp: Not provided/);
   const enquiry = preparePlanEnquiry(plan, form);
   assert.equal(enquiry.name, 'Test Visitor');
   assert.match(enquiry.message, /Pricing plan enquiry: Mini/);

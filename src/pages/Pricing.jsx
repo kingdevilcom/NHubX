@@ -31,17 +31,25 @@ const addons = [
   ['Additional page', 'LKR 1,500'], ['Additional revision', 'LKR 500'], ['Domain connection', 'LKR 500'], ['DNS setup', 'LKR 500'], ['Google Search Console', 'LKR 1,000'], ['Sitemap submission', 'LKR 500'], ['Google Analytics', 'LKR 1,000'], ['Content update', 'From LKR 1,000'], ['Professional email setup', 'From LKR 1,500'], ['Annual maintenance', 'LKR 2,500'], ['Google authentication', 'From LKR 5,000'], ['Admin dashboard', 'From LKR 15,000']
 ];
 
+const enquiryFieldClass = 'w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base text-white placeholder-gray-500 focus:border-nhubx-glow-primary/60 aria-[invalid=true]:border-red-400/70';
+
 const Pricing = ({ ready }) => {
   const dialogRef = useRef(null);
   const countryChanged = useRef(false);
   const trackedPlan = useRef(null);
+  const successHeading = useRef(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedPlan, setSelectedPlan] = useState(() => plans.find(({ name }) => name === searchParams.get('plan')) ?? null);
   const [form, setForm] = useState({ name: '', country: 'LK', whatsapp: '', email: '', details: '' });
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  const [fieldError, setFieldError] = useState(null);
 
   useEffect(() => { document.title = 'Pricing | NHubX'; }, []);
+
+  useEffect(() => {
+    if (status === 'success') successHeading.current?.focus();
+  }, [status]);
 
   const countryOptions = useMemo(() => {
     const names = new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' });
@@ -109,7 +117,27 @@ const Pricing = ({ ready }) => {
     setSelectedPlan(plan);
     setStatus('idle');
     setError('');
+    setFieldError(null);
   };
+
+  const updateField = (event) => {
+    const { name, value } = event.currentTarget;
+    if (name === 'country' || name === 'whatsapp') countryChanged.current = true;
+    setForm((current) => ({ ...current, [name]: value }));
+    if (fieldError?.field === name || (name === 'country' && fieldError?.field === 'whatsapp')) setFieldError(null);
+  };
+
+  const fieldProps = (name) => ({
+    name,
+    value: form[name],
+    onChange: updateField,
+    'aria-invalid': fieldError?.field === name || undefined,
+    'aria-describedby': fieldError?.field === name ? 'plan-enquiry-field-error' : undefined,
+  });
+
+  const fieldMessage = (name) => fieldError?.field === name && (
+    <p id="plan-enquiry-field-error" role="alert" className="mt-1.5 text-sm text-red-300">{fieldError.error}</p>
+  );
 
   const closePlanForm = () => {
     if (status === 'loading') return;
@@ -128,12 +156,20 @@ const Pricing = ({ ready }) => {
 
     const enquiry = preparePlanEnquiry(selectedPlan, form);
     if (enquiry.error) {
+      setFieldError(enquiry);
+      setError('');
       const field = event.currentTarget.elements.namedItem(enquiry.field);
-      field.setCustomValidity(enquiry.error);
-      field.reportValidity();
+      const optionalGroup = field.closest('details');
+      if (optionalGroup) optionalGroup.open = true;
+      field.focus();
       return;
     }
 
+    setFieldError(null);
+    if (!navigator.onLine) {
+      setError('You’re offline. Reconnect and try again. Your details are still here.');
+      return;
+    }
     setStatus('loading');
     setError('');
     try {
@@ -143,7 +179,7 @@ const Pricing = ({ ready }) => {
       setForm((current) => ({ name: '', country: current.country, whatsapp: '', email: '', details: '' }));
     } catch (submitError) {
       console.error('Unable to submit plan enquiry:', submitError);
-      setError('Your enquiry could not be sent. Please try again.');
+      setError('Your enquiry could not be sent. Your details are still here. Please try again.');
       setStatus('error');
     }
   };
@@ -200,24 +236,63 @@ const Pricing = ({ ready }) => {
           <div className="relative w-full max-w-xl max-h-[94%] sm:max-h-[90%] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0b0b0b] px-5 py-6 sm:p-8 shadow-2xl [padding-bottom:max(1.5rem,env(safe-area-inset-bottom))]">
             <div className="sm:hidden w-10 h-1 rounded-full bg-white/15 mx-auto mb-5" />
             <div className="flex items-start justify-between gap-3 mb-6 sm:mb-7">
-              <div className="min-w-0"><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-nhubx-glow-primary mb-2">Plan enquiry</p><h2 id="plan-form-title" className="text-2xl sm:text-3xl font-black truncate">{selectedPlan.name}</h2><p className="text-xs sm:text-sm text-gray-500 mt-1">LKR {selectedPlan.price} · Hosting {selectedPlan.hosting}</p></div>
+              <div className="min-w-0"><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-nhubx-glow-primary mb-2">Plan enquiry</p><h2 id="plan-form-title" className="text-2xl sm:text-3xl font-black truncate">{selectedPlan.name}</h2><p className="text-xs sm:text-sm text-gray-500 mt-1">LKR {selectedPlan.price} one-time development · {selectedPlan.hosting} hosting</p></div>
               <button onClick={closePlanForm} disabled={status === 'loading'} aria-label="Close" className="shrink-0 min-w-11 min-h-11 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-50"><X size={19} /></button>
             </div>
 
             {status === 'success' ? (
-              <div className="py-8 text-center"><div className="w-14 h-14 mx-auto mb-5 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center"><Check className="text-green-400" /></div><h3 className="text-2xl font-bold">Enquiry received</h3><p className="text-gray-500 mt-3 max-w-sm mx-auto">Thank you. NHubX can contact you using the details you provided.</p><button onClick={closePlanForm} className="mt-7 px-6 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-semibold">Close</button></div>
+              <div className="py-8 text-center">
+                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-green-500/20 bg-green-500/10"><Check aria-hidden="true" className="text-green-400" /></div>
+                <h3 ref={successHeading} tabIndex={-1} className="text-2xl font-bold">Enquiry received</h3>
+                <p className="mx-auto mt-3 max-w-sm text-gray-400">Thanks for your interest in the {selectedPlan.name} plan. We’ll reply using the contact details you provided.</p>
+                <button type="button" onClick={closePlanForm} className="mt-7 rounded-xl bg-white/10 px-6 py-3 text-sm font-semibold hover:bg-white/15">Back to pricing</button>
+              </div>
             ) : (
-              <form onSubmit={handleSubmit} onInput={(event) => event.target.setCustomValidity?.('')} className="space-y-4 sm:space-y-5">
-                <WhatsAppEnquiry planName={selectedPlan.name} source="pricing" className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 text-sm font-semibold hover:bg-white/5" />
-                <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Your name</span><input required name="name" maxLength="80" autoComplete="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Enter your name" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
-                <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
-                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">WhatsApp number</span><div className="flex flex-col min-[420px]:flex-row rounded-xl border border-white/10 bg-white/[0.03] focus-within:border-nhubx-glow-primary/60 overflow-hidden"><select aria-label="Country calling code" value={form.country} onChange={(event) => { countryChanged.current = true; event.currentTarget.form.elements.whatsapp.setCustomValidity(''); setForm({ ...form, country: event.target.value }); }} className="w-full min-[420px]:w-[46%] min-h-12 border-b min-[420px]:border-b-0 min-[420px]:border-r border-white/10 bg-[#101010] px-3 text-sm text-gray-300 outline-none">{countryOptions.map(({ country, name, dialCode }) => <option key={country} value={country}>{name} (+{dialCode})</option>)}</select><input required name="whatsapp" aria-label="WhatsApp number" type="tel" inputMode="tel" maxLength="20" autoComplete="tel-national" value={form.whatsapp} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} placeholder="7X XXX XXXX" className="min-w-0 flex-1 min-h-12 bg-transparent px-3 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none" /></div></label>
-                  <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Email address</span><input required name="email" type="email" maxLength="120" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@example.com" className="w-full min-h-12 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60" /></label>
-                </div>
-                <label className="block"><span className="block text-xs font-semibold text-gray-300 mb-2">Project details <span className="text-gray-600">(optional)</span></span><textarea rows="3" maxLength="1000" value={form.details} onChange={(event) => setForm({ ...form, details: event.target.value })} placeholder="Tell us what you want to build..." className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-base sm:text-sm text-white placeholder-gray-600 outline-none focus:border-nhubx-glow-primary/60 sm:min-h-28" /></label>
+              <form onSubmit={handleSubmit} noValidate aria-describedby="plan-enquiry-help" aria-busy={status === 'loading'} className="space-y-4">
+                <p id="plan-enquiry-help" className="text-sm text-gray-400">Your name and email are all we need to get started.</p>
+                <fieldset disabled={status === 'loading'} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="plan-enquiry-name" className="mb-1.5 block text-sm font-semibold">Your name</label>
+                      <input {...fieldProps('name')} id="plan-enquiry-name" required maxLength={80} autoComplete="name" placeholder="Enter your name" className={enquiryFieldClass} />
+                      {fieldMessage('name')}
+                    </div>
+                    <div>
+                      <label htmlFor="plan-enquiry-email" className="mb-1.5 block text-sm font-semibold">Email address</label>
+                      <input {...fieldProps('email')} id="plan-enquiry-email" required type="email" maxLength={120} autoComplete="email" placeholder="you@example.com" className={enquiryFieldClass} />
+                      {fieldMessage('email')}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="plan-enquiry-details" className="mb-1.5 block text-sm font-semibold">Project details <span className="font-normal text-gray-400">(optional)</span></label>
+                    <textarea {...fieldProps('details')} id="plan-enquiry-details" rows={3} maxLength={1000} placeholder="For example, a website for my shop with a product gallery" className={enquiryFieldClass + ' resize-y'} />
+                  </div>
+
+                  <details className="rounded-xl border border-white/10 px-3.5 py-2.5">
+                    <summary className="cursor-pointer text-sm font-semibold">Add a WhatsApp number <span className="font-normal text-gray-400">(optional)</span></summary>
+                    <div className="mt-3 grid gap-3 min-[420px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                      <div>
+                        <label htmlFor="plan-enquiry-country" className="mb-1.5 block text-sm text-gray-300">Country calling code</label>
+                        <select {...fieldProps('country')} id="plan-enquiry-country" autoComplete="tel-country-code" className={enquiryFieldClass + ' bg-[#101010] [&>option]:bg-[#101010]'}>
+                          {countryOptions.map(({ country, name, dialCode }) => <option key={country} value={country}>{name} (+{dialCode})</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="plan-enquiry-phone" className="mb-1.5 block text-sm text-gray-300">WhatsApp number</label>
+                        <input {...fieldProps('whatsapp')} id="plan-enquiry-phone" type="tel" inputMode="tel" maxLength={24} autoComplete="tel-national" placeholder="77 123 4567" className={enquiryFieldClass} />
+                        {fieldMessage('whatsapp')}
+                      </div>
+                    </div>
+                  </details>
+                </fieldset>
+
                 {error && <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-                <p className="text-[11px] leading-relaxed text-gray-600">By submitting, you allow NHubX to contact you about this project through WhatsApp or email.</p>
-                <button type="submit" disabled={status === 'loading'} className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl bg-nhubx-glow-primary hover:bg-nhubx-glow-hover disabled:opacity-60 px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition-colors">{status === 'loading' ? <><Loader2 size={16} className="animate-spin" /> Sending enquiry</> : <><Send size={16} /> Send enquiry</>}</button>
+                <p className="text-xs leading-relaxed text-gray-400">We’ll use your details to reply about this quote.</p>
+                <button type="submit" disabled={status === 'loading'} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-nhubx-glow-primary px-4 py-3 text-sm font-bold hover:bg-nhubx-glow-hover disabled:opacity-60">
+                  {status === 'loading' ? <><Loader2 size={16} aria-hidden="true" className="motion-safe:animate-spin" /> Sending enquiry…</> : <><Send size={16} aria-hidden="true" /> Send enquiry</>}
+                </button>
+                <WhatsAppEnquiry planName={selectedPlan.name} source="pricing" className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/10 text-sm font-semibold hover:bg-white/5" />
               </form>
             )}
           </div>

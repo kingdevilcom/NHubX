@@ -53,7 +53,7 @@ test('homepage navigation loads pricing on demand', async ({ page, isMobile }) =
   expect(modules.some((url) => /\/assets\/Pricing-/.test(url))).toBe(true);
 });
 
-test('pricing retains details after validation and restores keyboard focus', async ({ page }) => {
+test('pricing shows inline errors, retains details offline, and restores keyboard focus', async ({ page, context }) => {
   test.setTimeout(60_000);
   await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
   const opener = page.getByRole('button', { name: 'Choose plan' }).first();
@@ -61,22 +61,38 @@ test('pricing retains details after validation and restores keyboard focus', asy
   const dialog = page.getByRole('dialog', { name: 'Mini' });
   await expect(dialog).toBeVisible();
 
-  await dialog.getByLabel('Your name').fill('Test Visitor');
-  await dialog.getByLabel('Email address').fill('visitor@example.com');
-  const phone = dialog.getByRole('textbox', { name: 'WhatsApp number' });
-  await phone.fill('12345');
   const submit = dialog.getByRole('button', { name: 'Send enquiry' });
   await submit.click();
+  await expect(dialog.getByRole('alert')).toContainText('Enter at least two characters');
+  await dialog.getByLabel('Your name').fill('Test Visitor');
+  const email = dialog.getByLabel('Email address');
+  await email.fill('visitor@');
+  await submit.click();
+  await expect(email).toBeFocused();
+  await expect(dialog.getByRole('alert')).toContainText('Enter a valid email address');
+  await email.fill('visitor@example.com');
+  const phone = dialog.getByRole('textbox', { name: 'WhatsApp number' });
+  await expect(phone).toBeHidden();
+  await dialog.getByText(/Add a WhatsApp number/).click();
+  await phone.fill('12345');
+  await submit.click();
   await expect(phone).toBeFocused();
-  await expect.poll(() => phone.evaluate((element) => element.validationMessage)).toContain('valid WhatsApp');
+  await expect(phone).toHaveAttribute('aria-invalid', 'true');
+  await expect(dialog.getByRole('alert')).toContainText('valid WhatsApp number');
 
-  await phone.fill('077 123 4567');
-  await expect.poll(() => phone.evaluate((element) => element.validationMessage)).toBe('');
+  await phone.clear();
+  await expect(dialog.getByRole('alert')).toHaveCount(0);
   await expect(dialog.getByLabel('Your name')).toHaveValue('Test Visitor');
   await expect(dialog.getByLabel('Email address')).toHaveValue('visitor@example.com');
   await page.setViewportSize({ width: 360, height: 440 });
   await submit.scrollIntoViewIfNeeded();
   await expect(submit).toBeInViewport();
+
+  await context.setOffline(true);
+  await submit.click();
+  await expect(dialog.getByRole('alert')).toContainText('You’re offline');
+  await expect(email).toHaveValue('visitor@example.com');
+  await context.setOffline(false);
 
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
