@@ -9,6 +9,7 @@ import { sendEnquiryAlert } from '../functions/enquiryAlert.js';
 import { orderTemplateType, renderEmail } from '../functions/emailTemplates.js';
 import { orderApi } from '../server/orders.js';
 import { orderEmailSummary } from '../server/orderJobs.js';
+import { billingRecord, renderBillingRecord } from '../src/billingRecord.js';
 import { customerOrder, nextAnnualDate, reminderDays } from '../server/orderModel.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
@@ -197,4 +198,18 @@ test('order emails distinguish provider acceptance from delivery and expose no m
   const delivered = orderEmailSummary('quote', { ...sent, resendEvent: 'delivered' });
   assert.equal(delivered.status, 'Delivered');
   assert.equal('message' in delivered, false);
+});
+
+test('billing records show the correct amounts and escape customer and project text', () => {
+  const order = { id: 'order-1', title: 'My <script> website', customerName: 'A & B', total: 4999, deposit: 2000, paid: 2000, createdAt: '2026-11-24T00:00:00Z' };
+  const development = renderBillingRecord(billingRecord(order, 'development'));
+  assert.match(development, /Balance due<\/th><td>LKR 2,999/);
+  assert.match(development, /A &amp; B/);
+  assert.doesNotMatch(development, /<script>/);
+  const renewal = billingRecord(order, 'renewal', { id: 'hosting', type: 'Hosting', dueDate: '2027-11-24', amount: 499 });
+  assert.equal(renewal.reference, 'REN-hosting-2027-11-24');
+  assert.deepEqual(renewal.totals, [['Amount due', 499]]);
+  const receipt = billingRecord(order, 'receipt', { id: 'abc', label: 'Development payment', at: '2026-11-23T19:00:00Z', amount: 2000 });
+  assert.equal(receipt.date, '24 Nov 2026');
+  assert.deepEqual(receipt.totals, [['Received', 2000]]);
 });
