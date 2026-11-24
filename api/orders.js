@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const match = /^Bearer (\S+)$/.exec(req.headers.authorization || '');
   if (!match) return res.status(401).json({ error: 'Sign in to view orders.' });
   try {
-    const client = firebaseServer();
+    const client = await firebaseServer();
     if (!client) return res.status(503).json({ error: 'The order backend is awaiting Firebase configuration.' });
     let user;
     try { user = await client.auth.verifyIdToken(match[1], true); }

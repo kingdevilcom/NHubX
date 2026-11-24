@@ -1,8 +1,7 @@
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-
-export function firebaseServer() {
+export async function firebaseServer() {
+  const [{ cert, getApps, initializeApp }, { getAuth }, { getFirestore }] = await Promise.all([
+    import('firebase-admin/app'), import('firebase-admin/auth'), import('firebase-admin/firestore'),
+  ]);
   let app = getApps().find((item) => item.name === 'nhubx-orders');
   if (!app) {
     if (!process.env.FIREBASE_ADMIN_CREDENTIALS) return null;

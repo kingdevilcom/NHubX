@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized.' });
   }
   try {
-    const client = firebaseServer();
+    const client = await firebaseServer();
     if (!client) return res.status(503).json({ error: 'Firebase is awaiting configuration.' });
     await queueRenewalReminders(client.db);
     await flushOrderJobs(client.db, 20);
