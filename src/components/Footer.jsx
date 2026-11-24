@@ -144,6 +144,7 @@ const Footer = () => {
           </p>
 
           <div className="flex items-center gap-5">
+            <Link to="/orders" className="text-gray-600 hover:text-white transition">My orders</Link>
 
             <Link
               to="/privacy-policy"

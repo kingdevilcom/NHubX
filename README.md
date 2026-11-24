@@ -1,5 +1,20 @@
 # React + Vite
 
+## Orders on Vercel
+
+The order API and the daily renewal job run on Vercel. They use the existing Firebase project, with no Firebase Cloud Functions required. Enable Google sign-in in Firebase Authentication and authorize the website domain. Customers use the Google account matching their quote email.
+
+Set these variables under **Vercel → Project → Settings → Environment Variables** for Production and redeploy:
+
+| Variable | Value |
+| --- | --- |
+| `FIREBASE_ADMIN_CREDENTIALS` | The Firebase server service-account JSON for `nhubx-fc6d8`, entered as a secret. |
+| `RESEND_API_KEY` | A replacement Resend Full Access key. This one key can send email and sync Contacts. |
+| `ORDER_EMAIL_FROM` | `orders@email.nhubx.com`, after verifying `email.nhubx.com` in Resend. |
+| `CRON_SECRET` | A random secret of at least 32 characters. Vercel passes it to the renewal job. |
+
+Approve a test quote and test renewal before using real customer data. Customers synced to Contacts are created unsubscribed from Broadcasts. Existing contacts keep their current subscription status. The order portal shows bank-transfer payments once an admin records them.
+
 ## NHubX enquiry alerts
 
 Vercel deploys the website. Inbox stage permissions and email alerts deploy separately to Firebase project `nhubx-fc6d8`.

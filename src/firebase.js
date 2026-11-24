@@ -14,11 +14,10 @@ import {
   orderBy, 
   limit,
   where,
-  updateDoc,
   writeBatch,
   serverTimestamp 
 } from "firebase/firestore";
-import { enquiryStages, isAnalyticsEventPath, pricingEventPaths } from './enquiryTracking';
+import { isAnalyticsEventPath, pricingEventPaths } from './enquiryTracking';
 import { currentLeadSource, leadSources, leadSourceEventPath, withLeadSource } from './leadSource';
 
 const firebaseConfig = {
@@ -182,10 +181,6 @@ export const deleteMessage = async (id) => {
   }
 };
 
-export const saveEnquiryStage = (id, stage) => {
-  if (!enquiryStages.includes(stage)) throw new Error('Unknown enquiry stage.');
-  return updateDoc(doc(db, 'messages', id), { stage, stageUpdatedAt: serverTimestamp() });
-};
 
 // --- Projects Operations ---
 

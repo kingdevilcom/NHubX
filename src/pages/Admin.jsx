@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
   LogOut,
   BarChart3,
@@ -16,11 +17,14 @@ import AdminAnalytics from '../components/AdminAnalytics';
 import AdminProjectManager from '../components/AdminProjectManager';
 import AdminContentEditor from '../components/AdminContentEditor';
 import AdminMessages from '../components/AdminMessages';
+import AdminOrders from '../components/AdminOrders';
 import { fetchProjects } from '../firebase';
 
 const Admin = () => {
   const { isAuthenticated, isAuthLoading, logout, user } = useAdmin();
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [params, setParams] = useSearchParams();
+  const activeTab = params.get('tab') || 'analytics';
+  const setActiveTab = (tab) => setParams({ tab }, { replace: true });
   const [projects, setProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [projectsError, setProjectsError] = useState('');
@@ -73,6 +77,7 @@ const Admin = () => {
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'projects', label: 'Projects', icon: Layers },
     { id: 'messages', label: 'Messages', icon: Mail },
+    { id: 'orders', label: 'Orders', icon: Layers },
     { id: 'content', label: 'Content', icon: Settings }
   ];
 
@@ -187,6 +192,7 @@ const Admin = () => {
               )
             )}
             {activeTab === 'messages' && <AdminMessages />}
+            {activeTab === 'orders' && <AdminOrders />}
             {activeTab === 'content' && <AdminContentEditor />}
           </motion.div>
         </AnimatePresence>

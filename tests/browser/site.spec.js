@@ -163,3 +163,10 @@ test('service business landing page keeps outreach attribution through the quote
   await expect(page.getByRole('dialog', { name: 'Mini' })).toBeVisible();
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem('nhubxLeadSource'))).toBe('outreach');
 });
+
+test('order portal requires sign-in before showing customer records', async ({ page }) => {
+  await page.goto('/orders', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'My orders' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.getByText('Balance due', { exact: true })).toHaveCount(0);
+});

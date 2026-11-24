@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { Mail, Trash2, Clock, User, Copy, Check, ShieldAlert } from 'lucide-react';
-import { fetchMessages, deleteMessage, saveEnquiryStage } from '../firebase';
+import { fetchMessages, deleteMessage } from '../firebase';
+import { orderRequest } from '../orders';
 import { enquiryStages, getEnquiryPlan, getEnquiryStage } from '../enquiryTracking';
 import { readEnquirySource } from '../leadSource';
 
@@ -38,12 +40,12 @@ const AdminMessages = () => {
     setSavingStage(true);
     setNotice('');
     try {
-      await saveEnquiryStage(id, stage);
+      await orderRequest('stageEnquiry', { id, stage });
       setMessages((current) => current.map((message) => message.id === id ? { ...message, stage } : message));
       setNotice('Enquiry moved to ' + stage + '.');
     } catch (error) {
       console.error('Unable to save enquiry stage:', error);
-      setNotice('Could not save the stage. Check your admin access and the published Firestore rules.');
+      setNotice('Could not save the stage. ' + error.message);
     } finally {
       setSavingStage(false);
     }
@@ -196,6 +198,7 @@ const AdminMessages = () => {
               <a href={reply} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg bg-nhubx-glow-primary px-3 text-sm font-semibold hover:bg-nhubx-glow-hover">
                 <Mail size={15} aria-hidden="true" /> Reply by email
               </a>
+              <Link to={'/admin?tab=orders&enquiry=' + encodeURIComponent(msg.id)} className="ml-3 inline-flex min-h-10 items-center rounded-lg border border-white/20 px-3 text-sm font-semibold hover:bg-white/5">Create quote</Link>
 
               {/* Floating Delete Action */}
               <div className="absolute right-4 bottom-4 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">

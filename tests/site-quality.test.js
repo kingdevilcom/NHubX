@@ -6,6 +6,8 @@ import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPath
 import { entryPlan, whatsappEnquiryUrl } from '../src/salesOffer.js';
 import { classifyLeadSource, leadSourceEventPath, readEnquirySource, withLeadSource } from '../src/leadSource.js';
 import { sendEnquiryAlert } from '../functions/enquiryAlert.js';
+import { orderApi } from '../server/orders.js';
+import { customerOrder, nextAnnualDate, reminderDays } from '../server/orderModel.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
   assert.equal(new Set(monthlyFireThemes.map(({ primary }) => primary)).size, 12);
@@ -124,4 +126,42 @@ test('enquiry alerts share a five-minute idempotency key and contain only an inb
   assert.equal(requests[0].url, 'https://api.resend.com/emails');
   assert.deepEqual(requests[0].body.to, ['owner@example.com']);
   assert.match(requests[0].body.text, /https:\/\/www\.nhubx\.com\/admin/);
+});
+
+test('renewal dates and customer projections keep private order fields out', () => {
+  assert.equal(nextAnnualDate('2028-02-29'), '2029-02-28');
+  assert.equal(reminderDays('2027-01-01', '2026-12-02'), 30);
+  const visible = customerOrder({ title: 'Website', privateNotes: 'internal', customerEmail: 'owner@example.com', arbitraryInternalField: true });
+  assert.equal(visible.title, 'Website');
+  assert.equal('privateNotes' in visible, false);
+  assert.equal('customerEmail' in visible, false);
+  assert.equal('arbitraryInternalField' in visible, false);
+});
+
+test('annual renewal advances once even when the payment request is retried', async () => {
+  const id = 'abc';
+  const records = new Map([['orders/' + id, {
+    customerEmail: 'customer@example.com', stage: 'Delivered', timeline: [], receipts: [],
+    services: [{ id: 'hosting', type: 'Hosting', dueDate: '2027-04-01', amount: 499 }],
+  }]]);
+  const collection = (path) => ({ doc: (name) => {
+    const full = path + '/' + name;
+    return { id: name, path: full, collection: (segment) => collection(full + '/' + segment) };
+  } });
+  const db = { collection, runTransaction: (callback) => callback({
+    get: async (ref) => ({ exists: records.has(ref.path), data: () => records.get(ref.path) }),
+    set: (ref, value) => records.set(ref.path, value),
+    create: (ref, value) => records.set(ref.path, value),
+    update: (ref, value) => records.set(ref.path, { ...records.get(ref.path), ...value }),
+  }) };
+  const admin = { email: 'stharunindu@gmail.com', email_verified: true, uid: 'admin' };
+  const payment = { action: 'renewal', id, serviceId: 'hosting', cycle: '2027-04-01', operation: '12345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(orderApi(db, { email: 'customer@example.com', email_verified: true }, payment), { code: 'permission-denied' });
+  await orderApi(db, admin, payment);
+  await orderApi(db, admin, payment);
+  await assert.rejects(orderApi(db, admin, { ...payment, operation: '22345678-1234-1234-1234-123456789abc' }), /already changed/);
+  const final = records.get('orders/' + id);
+  assert.equal(final.services[0].dueDate, '2028-04-01');
+  assert.equal(final.receipts.length, 1);
+  assert.equal(final.receipts[0].amount, 499);
 });
