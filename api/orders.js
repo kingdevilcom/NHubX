@@ -1,4 +1,4 @@
-import { firebaseServer } from '../server/firebaseAdmin.js';
+import { FirebaseConfigError, firebaseServer } from '../server/firebaseAdmin.js';
 import { OrderError, orderApi } from '../server/orders.js';
 import { flushOrderJobs } from '../server/orderJobs.js';
 
@@ -24,6 +24,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ result });
   } catch (error) {
+    if (error instanceof FirebaseConfigError) return res.status(503).json({ error: error.message });
     if (error instanceof OrderError) return res.status(errorStatuses[error.code]).json({ error: error.message });
     console.error('Order request failed:', error.code || error.name);
     return res.status(500).json({ error: 'Orders are temporarily unavailable.' });
