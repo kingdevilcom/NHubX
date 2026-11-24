@@ -1,3 +1,5 @@
+import { orderTemplateType, renderEmail } from '../functions/emailTemplates.js';
+
 const portal = 'https://www.nhubx.com/orders';
 
 const deliveryLabels = {
@@ -54,6 +56,7 @@ async function finishFailure(ref, field, response) {
 
 async function deliver(doc) {
   const mail = doc.data();
+  const payloadVersion = mail.payloadVersion ?? (mail.firstAttemptAt ? 1 : 2);
   // Resend retains idempotency keys for a limited period. Mark ambiguous older sends for review.
   let started = mail.firstAttemptAt;
   if (!started) {
@@ -62,7 +65,7 @@ async function deliver(doc) {
       if (!current.pending) return null;
       if (current.firstAttemptAt) return current.firstAttemptAt;
       const timestamp = new Date().toISOString();
-      tx.update(doc.ref, { firstAttemptAt: timestamp });
+      tx.update(doc.ref, { firstAttemptAt: timestamp, payloadVersion });
       return timestamp;
     });
   }
@@ -78,7 +81,8 @@ async function deliver(doc) {
       from: process.env.ORDER_EMAIL_FROM || 'orders@email.nhubx.com',
       to: [mail.to],
       subject: mail.subject,
-      text: mail.message + '\n\n' + portal,
+      ...(payloadVersion === 1 ? { text: mail.message + '\n\n' + portal }
+        : renderEmail({ type: orderTemplateType(mail), subject: mail.subject, message: mail.message, details: mail.details?.map(({ label, value }) => [label, value]) })),
     }),
   });
   if (!response.ok) {

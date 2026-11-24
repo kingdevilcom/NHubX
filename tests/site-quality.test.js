@@ -6,6 +6,7 @@ import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPath
 import { entryPlan, whatsappEnquiryUrl } from '../src/salesOffer.js';
 import { classifyLeadSource, leadSourceEventPath, readEnquirySource, withLeadSource } from '../src/leadSource.js';
 import { sendEnquiryAlert } from '../functions/enquiryAlert.js';
+import { orderTemplateType, renderEmail } from '../functions/emailTemplates.js';
 import { orderApi } from '../server/orders.js';
 import { orderEmailSummary } from '../server/orderJobs.js';
 import { customerOrder, nextAnnualDate, reminderDays } from '../server/orderModel.js';
@@ -127,6 +128,21 @@ test('enquiry alerts share a five-minute idempotency key and contain only an inb
   assert.equal(requests[0].url, 'https://api.resend.com/emails');
   assert.deepEqual(requests[0].body.to, ['owner@example.com']);
   assert.match(requests[0].body.text, /https:\/\/www\.nhubx\.com\/admin/);
+  assert.match(requests[0].body.html, /Private admin notice/);
+});
+
+test('each email template includes a branded HTML version and accessible plain text', () => {
+  for (const type of ['quote', 'update', 'payment', 'renewal', 'message', 'enquiry']) {
+    const { html, text } = renderEmail({ type, subject: '<Test subject>', message: 'First & second\n<script>bad</script>', details: [['Amount', 'LKR 499']] });
+    const link = type === 'enquiry' ? 'https://www.nhubx.com/admin' : 'https://www.nhubx.com/orders';
+    assert.ok(html.includes(link));
+    assert.ok(text.includes(link));
+    assert.match(html, /nhubx-logo\.png/);
+    assert.match(html, /First &amp; second<br>&lt;script&gt;/);
+    assert.doesNotMatch(html, /<script>/);
+    assert.match(text, /Amount: LKR 499/);
+  }
+  assert.equal(orderTemplateType({ subject: 'NHubX order update', message: 'Development payment confirmed.' }), 'payment');
 });
 
 test('renewal dates and customer projections keep private order fields out', () => {

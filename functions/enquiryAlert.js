@@ -1,3 +1,5 @@
+import { renderEmail } from './emailTemplates.js';
+
 const fiveMinutes = 5 * 60 * 1000;
 const oneHour = 60 * 60 * 1000;
 
@@ -18,7 +20,7 @@ export async function sendEnquiryAlert({ createdAt, from, to, apiKey }, { now = 
       from,
       to: [to],
       subject: 'New NHubX enquiries',
-      text: 'New website enquiries are waiting. Open the NHubX admin inbox to review and reply: https://www.nhubx.com/admin',
+      ...renderEmail({ type: 'enquiry', subject: 'New NHubX enquiries', message: 'New website enquiries are waiting.' }),
     }),
     signal: AbortSignal.timeout(10_000),
   });

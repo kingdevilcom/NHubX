@@ -29,7 +29,17 @@ function date(value) {
 }
 const renewalDates = (services) => services.map((item) => item.dueDate);
 const log = (order, message) => [...order.timeline.slice(-59), { message, at: new Date().toISOString() }];
-const emailBody = (customerEmail, subject, message, orderId) => ({ to: customerEmail, subject, message, orderId, createdAt: new Date().toISOString(), pending: true });
+const lkr = (value) => 'LKR ' + new Intl.NumberFormat('en-LK').format(value);
+const emailBody = (customerEmail, subject, message, orderId, template, details = []) => ({
+  to: customerEmail,
+  subject,
+  message,
+  orderId,
+  template,
+  details: details.map(([label, value]) => ({ label, value })),
+  createdAt: new Date().toISOString(),
+  pending: true,
+});
 
 export async function orderApi(db, auth, data) {
   const orders = db.collection('orders');
@@ -107,7 +117,9 @@ export async function orderApi(db, auth, data) {
       };
       tx.set(ref, order);
       if (!savedCustomer.exists) tx.create(customerRef, { email: customerEmail, name: customerName, syncPending: true });
-      tx.set(outbox.doc(ref.id + '-quote'), emailBody(customerEmail, 'Your NHubX quote is ready', 'Sign in with this email to review your quote.', ref.id));
+      tx.set(outbox.doc(ref.id + '-quote'), emailBody(customerEmail, 'Your NHubX quote is ready', 'Review the quote, scope, and expected delivery date in My Orders.', ref.id, 'quote', [
+        ['Project', order.title], ['Development total', lkr(order.total)], ['Deposit', lkr(order.deposit)], ['Expected delivery', order.dueDate],
+      ]));
     });
     return { id: ref.id, emailId: ref.id + '-quote' };
   }
@@ -129,7 +141,7 @@ export async function orderApi(db, auth, data) {
       const subject = text(input.subject, 160, 'the email subject');
       if (/[\r\n]/.test(subject)) invalid('The email subject must be one line.');
       const message = text(input.message, 4000, 'the message');
-      tx.create(outbox.doc(id + '-' + op), emailBody(order.customerEmail, subject, message, id));
+      tx.create(outbox.doc(id + '-' + op), emailBody(order.customerEmail, subject, message, id, 'message', [['Project', order.title]]));
       tx.create(operation, { at: new Date().toISOString() });
       return;
     }
@@ -172,7 +184,13 @@ export async function orderApi(db, auth, data) {
     }
     if (notice) {
       changes.timeline = log(order, notice);
-      tx.set(outbox.doc(id + '-' + op), emailBody(order.customerEmail, 'NHubX order update', notice + '. Sign in to see the details.', id));
+      const payment = action === 'payment' || action === 'renewal';
+      const receipt = payment ? changes.receipts.at(-1) : null;
+      const details = [['Project', order.title]];
+      if (receipt) details.push(['Amount received', lkr(receipt.amount)]);
+      if (action === 'renewal') details.push(['Next renewal', changes.services.find((item) => item.id === input.serviceId).dueDate]);
+      if (action === 'payment') details.push(['Development balance', lkr(order.total - changes.paid)]);
+      tx.set(outbox.doc(id + '-' + op), emailBody(order.customerEmail, payment ? 'NHubX payment confirmed' : 'NHubX order update', notice + '.', id, payment ? 'payment' : 'update', details));
     }
     tx.update(ref, changes);
     tx.create(operation, { at: new Date().toISOString() });
@@ -198,7 +216,9 @@ export async function queueRenewalReminders(db) {
       }));
       for (const { service, ref, saved } of records) {
         if (!saved.exists) tx.create(ref, emailBody(order.customerEmail, 'NHubX renewal reminder',
-          service.type + ' renews on ' + service.dueDate + '. Amount due: LKR ' + service.amount + '. Sign in to review.', candidate.id));
+          'Your ' + service.type.toLowerCase() + ' renewal is coming up. Sign in to review the renewal invoice.', candidate.id, 'renewal', [
+            ['Project', order.title], ['Service', service.type], ['Due date', service.dueDate], ['Amount due', lkr(service.amount)],
+          ]));
       }
     });
   }
