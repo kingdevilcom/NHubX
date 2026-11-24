@@ -10,6 +10,7 @@ import { orderTemplateType, renderEmail } from '../functions/emailTemplates.js';
 import { orderApi } from '../server/orders.js';
 import { orderEmailSummary } from '../server/orderJobs.js';
 import { billingRecord, renderBillingRecord } from '../src/billingRecord.js';
+import { filterAdminOrders, needsCustomerAction, upcomingRenewals } from '../src/orderWorkspace.js';
 import { customerOrder, nextAnnualDate, reminderDays } from '../server/orderModel.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
@@ -212,4 +213,15 @@ test('billing records show the correct amounts and escape customer and project t
   const receipt = billingRecord(order, 'receipt', { id: 'abc', label: 'Development payment', at: '2026-11-23T19:00:00Z', amount: 2000 });
   assert.equal(receipt.date, '24 Nov 2026');
   assert.deepEqual(receipt.totals, [['Received', 2000]]);
+});
+
+test('order search and renewal priorities stay scoped to their intended status', () => {
+  const orders = [
+    { id: 'first', title: 'Portfolio', customerName: 'Maya', stage: 'Review', services: [{ id: 'old', dueDate: '2026-11-10' }] },
+    { id: 'second', title: 'Shop', customerName: 'Hari', customerEmail: 'client@example.com', stage: 'Delivered', services: [{ id: 'soon', dueDate: '2026-12-24' }, { id: 'later', dueDate: '2026-12-25' }] },
+  ];
+  assert.deepEqual(filterAdminOrders(orders, ' client@ ', 'Delivered'), [orders[1]]);
+  assert.deepEqual(filterAdminOrders(orders, 'client@', 'Review'), []);
+  assert.deepEqual(orders.filter(needsCustomerAction), [orders[0]]);
+  assert.deepEqual(upcomingRenewals(orders, '2026-11-24').map(({ id, overdue }) => [id, overdue]), [['old', true], ['soon', false]]);
 });

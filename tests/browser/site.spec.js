@@ -170,3 +170,11 @@ test('order portal requires sign-in before showing customer records', async ({ p
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
   await expect(page.getByText('Balance due', { exact: true })).toHaveCount(0);
 });
+
+test('admin sign-in preserves a quote creation deep link', async ({ page }) => {
+  await page.goto('/admin?tab=orders&enquiry=example', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'NHubX Admin' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
+  await expect(page).toHaveURL(/\?tab=orders&enquiry=example$/);
+  await expect(page.getByRole('button', { name: 'Create and send quote' })).toHaveCount(0);
+});

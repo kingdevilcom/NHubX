@@ -1,16 +1,20 @@
-import { formatLkr } from '../orders';
+import { formatLkr, stages } from '../orders';
+import { colomboToday } from '../orderWorkspace';
 
 import { openBillingRecord } from '../billingRecord';
 
-export default function OrderSummary({ order }) {
+export default function OrderSummary({ order, showProgress = false }) {
   const { title, stage, total, paid, deposit, scope, dueDate, deliveryUrl, services, timeline, receipts } = order;
-  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Colombo' }).format(new Date());
+  const today = colomboToday();
   return (
     <>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div><h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-gray-400">Expected delivery {dueDate}</p></div>
         <p className="rounded-full border border-white/15 px-3 py-1 text-sm">{stage}</p>
       </header>
+      {showProgress && <ol aria-label="Order progress" className="mt-4 grid grid-cols-5 gap-1.5 text-xs sm:text-sm">
+        {stages.map((step, index) => <li key={step} aria-current={step === stage ? 'step' : undefined} className={step === stage ? 'font-bold text-white' : 'text-gray-400'}><span aria-hidden="true" className={`mb-1.5 block h-1 rounded-full ${index <= stages.indexOf(stage) ? 'bg-nhubx-glow-primary' : 'bg-white/10'}`} />{step}</li>)}
+      </ol>}
       <p className="mt-3 whitespace-pre-wrap text-sm text-gray-300">{scope}</p>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         {[['Development total', total], ['Deposit', deposit], ['Paid', paid], ['Balance due', total - paid]].map(([label, value]) => (

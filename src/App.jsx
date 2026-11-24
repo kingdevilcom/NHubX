@@ -194,7 +194,7 @@ function AppContent() {
         {showStartup && <LoadingScreen key="startup" onComplete={finishStartup} />}
       </AnimatePresence>
       <div inert={showStartup} className="min-h-screen text-white flex flex-col">
-        {!showStartup && <FireParticles zIndex={1} />}
+        {!showStartup && !isAdminRoute && <FireParticles zIndex={1} />}
         {!isAdminRoute && <Navbar />}
         <main className="flex-grow relative z-10">
           <Suspense fallback={showStartup ? null : <PageLoading />}>

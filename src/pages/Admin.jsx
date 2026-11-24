@@ -1,16 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
-import {
-  LogOut,
-  BarChart3,
-  Settings,
-  Layers,
-  Mail,
-  ShieldCheck,
-  RefreshCw,
-  Loader2
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowUpRight, BarChart3, Layers, Loader2, LogOut, Mail, Package, RefreshCw, Settings } from 'lucide-react';
 import { AdminProvider, useAdmin } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
 import AdminAnalytics from '../components/AdminAnalytics';
@@ -20,186 +10,87 @@ import AdminMessages from '../components/AdminMessages';
 import AdminOrders from '../components/AdminOrders';
 import { fetchProjects } from '../firebase';
 
-const Admin = () => {
+const sections = [
+  { id: 'orders', label: 'Orders', description: 'Manage quotes, delivery, payments and renewals.', icon: Package },
+  { id: 'messages', label: 'Enquiries', description: 'Review incoming messages and turn enquiries into quotes.', icon: Mail },
+  { id: 'analytics', label: 'Analytics', description: 'Track website traffic and where leads come from.', icon: BarChart3 },
+  { id: 'projects', label: 'Projects', description: 'Manage the public project portfolio.', icon: Layers },
+  { id: 'content', label: 'Site content', description: 'Update website content and the active fire theme.', icon: Settings },
+];
+
+function AdminProjects() {
+  const [projects, setProjects] = useState(null);
+  const [error, setError] = useState('');
+  const load = useCallback(async () => {
+    setError('');
+    try { setProjects((await fetchProjects()).map((project, index) => ({ ...project, sortOrder: index }))); }
+    catch { setError('Projects could not be loaded. Check your connection and try again.'); }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  if (error) return <div role="alert" className="rounded-xl border border-red-500/25 p-5 text-red-300">{error}<button type="button" onClick={load} className="ml-3 inline-flex items-center gap-2 underline"><RefreshCw size={14} />Try again</button></div>;
+  if (!projects) return <p role="status" className="flex items-center gap-2 text-gray-400"><Loader2 size={18} className="motion-safe:animate-spin" /> Loading projects…</p>;
+  return <AdminProjectManager projects={projects} setProjects={setProjects} />;
+}
+
+function Admin() {
   const { isAuthenticated, isAuthLoading, logout, user } = useAdmin();
   const [params, setParams] = useSearchParams();
-  const activeTab = params.get('tab') || 'analytics';
-  const setActiveTab = (tab) => setParams({ tab }, { replace: true });
-  const [projects, setProjects] = useState([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
-  const [projectsError, setProjectsError] = useState('');
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const section = sections.find(({ id }) => id === params.get('tab')) ?? sections[0];
+  const [signingOut, setSigningOut] = useState(false);
+  const [error, setError] = useState('');
 
-  const loadProjects = useCallback(async () => {
-    setLoadingProjects(true);
-    setProjectsError('');
+  useEffect(() => { document.title = 'Admin workspace | NHubX'; }, []);
 
-    try {
-      const data = await fetchProjects();
-      setProjects(data.map((project, index) => ({ ...project, sortOrder: index })));
-    } catch (error) {
-      console.error('Failed to load projects from Firestore in Admin:', error);
-      setProjectsError('Projects could not be loaded. Check your connection and Firestore permissions.');
-    } finally {
-      setLoadingProjects(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) loadProjects();
-  }, [isAuthenticated, loadProjects]);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-white">
-        <Loader2 className="w-10 h-10 text-nhubx-glow-primary animate-spin" />
-        <p className="text-xs font-mono uppercase tracking-[0.25em] text-gray-400">
-          Verifying admin session
-        </p>
-      </div>
-    );
+  async function handleLogout() {
+    setSigningOut(true);
+    setError('');
+    try { await logout(); }
+    catch { setError('Could not sign out. Please try again.'); }
+    finally { setSigningOut(false); }
   }
 
-  if (!isAuthenticated) {
-    return <AdminLogin onLoginSuccess={() => setActiveTab('analytics')} />;
-  }
-
-  const tabs = [
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'projects', label: 'Projects', icon: Layers },
-    { id: 'messages', label: 'Messages', icon: Mail },
-    { id: 'orders', label: 'Orders', icon: Layers },
-    { id: 'content', label: 'Content', icon: Settings }
-  ];
+  if (isAuthLoading) return <div className="grid min-h-screen place-items-center bg-[#101011]"><p role="status" className="flex items-center gap-2 text-gray-300"><Loader2 size={20} className="motion-safe:animate-spin" /> Checking admin session…</p></div>;
+  if (!isAuthenticated) return <AdminLogin />;
 
   return (
-    <div className="min-h-screen text-white pt-24 sm:pt-28 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10"
-        >
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black mb-2">
-              Admin <span className="glow-text-primary">Dashboard</span>
-            </h1>
-            <p className="text-gray-400">Manage your portfolio, projects, and secure submissions</p>
+    <div className="min-h-screen bg-[#101011] text-white">
+      <div className="mx-auto grid max-w-[1500px] lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside className="min-w-0 border-b border-white/10 bg-[#151516] px-4 py-4 lg:min-h-screen lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="flex items-center gap-2.5 font-bold"><img src="/nhubx-logo.png" width="34" height="34" alt="" className="rounded-lg" /> NHubX Admin</Link>
+            <Link to="/" className="rounded-lg border border-white/10 p-2 text-gray-300 lg:hidden" aria-label="View website"><ArrowUpRight size={16} /></Link>
           </div>
-          <div className="w-full lg:w-auto flex items-center justify-between sm:justify-start gap-3 glass border border-white/10 rounded-2xl p-3">
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt=""
-                referrerPolicy="no-referrer"
-                className="w-10 h-10 rounded-full border border-nhubx-glow-primary/40"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-nhubx-glow-primary/15 flex items-center justify-center">
-                <ShieldCheck size={20} className="text-nhubx-glow-primary" />
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold truncate">{user?.displayName || 'NHubX Admin'}</p>
-              <p className="text-[11px] text-gray-400 truncate max-w-48">{user?.email}</p>
+          <nav aria-label="Admin sections" className="mt-4 flex gap-1 overflow-x-auto pb-1 lg:mt-8 lg:grid lg:overflow-visible">
+            {sections.map(({ id, icon: Icon, label }) => (
+              <button key={id} type="button" aria-current={section.id === id ? 'page' : undefined} onClick={() => setParams({ tab: id }, { replace: true })}
+                className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2.5 text-left text-sm font-semibold ${section.id === id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10 text-nhubx-glow-primary' : 'border-transparent text-gray-300 hover:bg-white/5'}`}>
+                <Icon size={17} aria-hidden="true" />{label}
+              </button>
+            ))}
+          </nav>
+          <Link to="/" className="mt-6 hidden items-center gap-2 px-3 text-sm text-gray-400 hover:text-white lg:flex">View website <ArrowUpRight size={15} /></Link>
+        </aside>
+
+        <div className="min-w-0 px-4 pb-14 pt-5 sm:px-7 lg:pt-8">
+          <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
+            <div><h1 className="text-3xl font-black tracking-tight sm:text-4xl">{section.label}</h1><p className="mt-1.5 text-sm text-gray-400">{section.description}</p></div>
+            <div className="flex max-w-full items-center gap-2">
+              <span className="hidden max-w-48 truncate text-sm text-gray-400 sm:inline">{user?.displayName || user?.email}</span>
+              <button type="button" onClick={handleLogout} disabled={signingOut} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 disabled:opacity-50"><LogOut size={16} aria-hidden="true" />{signingOut ? 'Signing out…' : 'Sign out'}</button>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              aria-label="Sign out"
-              className="flex items-center gap-2 bg-red-500/15 hover:bg-red-500/25 disabled:opacity-50 border border-red-500/25 text-red-300 px-3 py-2 rounded-xl transition-all"
-            >
-              {isLoggingOut ? <Loader2 size={17} className="animate-spin" /> : <LogOut size={17} />}
-              <span className="hidden sm:inline">Sign out</span>
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* Tab Navigation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          role="tablist"
-          aria-label="Admin sections"
-          className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"
-        >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-
-            return (
-              <motion.button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                role="tab"
-                aria-selected={isActive}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all ${
-                  isActive
-                    ? 'bg-nhubx-glow-primary text-white shadow-glow'
-                    : 'glass border border-white/10 text-gray-300 hover:border-nhubx-glow-primary/50'
-                }`}
-              >
-                <Icon size={20} />
-                <span>{tab.label}</span>
-              </motion.button>
-            );
-          })}
-        </motion.div>
-
-        {/* Content Area */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {activeTab === 'analytics' && <AdminAnalytics />}
-            {activeTab === 'projects' && (
-              loadingProjects ? (
-                <div className="text-center py-12 text-gray-400 font-mono">
-                  <Loader2 className="w-8 h-8 mx-auto mb-3 animate-spin text-nhubx-glow-primary" />
-                  Loading project records...
-                </div>
-              ) : projectsError ? (
-                <div className="glass rounded-2xl border border-red-500/20 p-8 text-center">
-                  <p className="text-red-300 mb-4">{projectsError}</p>
-                  <button
-                    onClick={loadProjects}
-                    className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-semibold transition-colors"
-                  >
-                    <RefreshCw size={16} />
-                    Try again
-                  </button>
-                </div>
-              ) : (
-                <AdminProjectManager projects={projects} setProjects={setProjects} />
-              )
-            )}
-            {activeTab === 'messages' && <AdminMessages />}
-            {activeTab === 'orders' && <AdminOrders />}
-            {activeTab === 'content' && <AdminContentEditor />}
-          </motion.div>
-        </AnimatePresence>
+          </header>
+          {error && <p className="mb-4 text-sm text-red-300" role="alert">{error}</p>}
+          {section.id === 'orders' && <AdminOrders />}
+          {section.id === 'messages' && <AdminMessages />}
+          {section.id === 'analytics' && <AdminAnalytics />}
+          {section.id === 'projects' && <AdminProjects />}
+          {section.id === 'content' && <AdminContentEditor />}
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default function AdminPage() {
   return <AdminProvider><Admin /></AdminProvider>;

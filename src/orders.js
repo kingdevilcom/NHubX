@@ -15,6 +15,6 @@ export async function orderRequest(action, input = {}) {
 }
 
 export const formatLkr = (value) => 'LKR ' + new Intl.NumberFormat('en-LK').format(value);
-export const stages = ['Quote sent', 'Accepted', 'In progress', 'Review', 'Delivered'];
+export { stages } from './orderWorkspace';
 export const orderField = 'w-full min-w-0 rounded-lg border border-white/15 bg-[#151515] px-3 py-2 text-sm text-white';
 export const orderButton = 'rounded-lg bg-nhubx-glow-primary px-4 py-2.5 text-sm font-semibold disabled:opacity-50';
