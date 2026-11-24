@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { formatLkr, orderButton, orderField, orderRequest, stages } from '../orders';
 import OrderSummary from './OrderSummary';
+import OrderEmailPanel from './OrderEmailPanel';
 
 export default function AdminOrders() {
   const [params] = useSearchParams();
@@ -28,7 +29,7 @@ export default function AdminOrders() {
       setOrders(await orderRequest('list', { admin: true }));
       retry.current = null;
       if (action !== 'update') form.reset();
-      setNotice('Saved.');
+      setNotice(action === 'create' ? 'Quote saved. Open Customer email on the order to check its email status.' : 'Saved.');
     } catch (err) { setNotice(err.message); }
     finally { setBusy(false); }
   }
@@ -64,6 +65,7 @@ export default function AdminOrders() {
         <article key={order.id} className="glass rounded-xl p-5">
           <OrderSummary order={order} />
           <p className="mt-3 break-all text-sm text-gray-400">{order.customerName} · {order.customerEmail}</p>
+          <OrderEmailPanel order={order} />
           <details className="mt-3 border-t border-white/10 pt-3">
             <summary className="cursor-pointer font-semibold">Manage order and payments</summary>
             <form className="mt-3 grid gap-3 sm:grid-cols-2" onSubmit={(event) => submit(event, 'update', { id: order.id })}>

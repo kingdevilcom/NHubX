@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { orderEmailHistory, refreshOrderEmail } from './orderJobs.js';
 import { customerOrder, nextAnnualDate, orderStages, reminderDays, serviceTypes } from './orderModel.js';
 
 export class OrderError extends Error {
@@ -28,7 +29,7 @@ function date(value) {
 }
 const renewalDates = (services) => services.map((item) => item.dueDate);
 const log = (order, message) => [...order.timeline.slice(-59), { message, at: new Date().toISOString() }];
-const emailBody = (customerEmail, subject, message) => ({ to: customerEmail, subject, message, pending: true });
+const emailBody = (customerEmail, subject, message, orderId) => ({ to: customerEmail, subject, message, orderId, createdAt: new Date().toISOString(), pending: true });
 
 export async function orderApi(db, auth, data) {
   const orders = db.collection('orders');
@@ -38,6 +39,18 @@ export async function orderApi(db, auth, data) {
   const admin = email === 'stharunindu@gmail.com';
   const input = data && typeof data === 'object' ? data : {};
   const { action } = input;
+
+  if (action === 'emailHistory' || action === 'checkEmail') {
+    if (!admin) throw new OrderError('permission-denied', 'Admin access required.');
+    const id = text(input.id, 110, 'order ID');
+    if (!/^[\w-]+$/.test(id)) invalid('Invalid order ID.');
+    if (action === 'emailHistory') return orderEmailHistory(outbox, id);
+    const emailId = text(input.emailId, 240, 'email ID');
+    if (!/^[\w-]+$/.test(emailId)) invalid('Invalid email ID.');
+    const record = await outbox.doc(emailId).get();
+    if (!record.exists || (record.data().orderId !== id && emailId !== id + '-quote')) throw new OrderError('not-found', 'Order email not found.');
+    return refreshOrderEmail(record);
+  }
 
   if (action === 'stageEnquiry') {
     if (!admin) throw new OrderError('permission-denied', 'Admin access required.');
@@ -62,7 +75,7 @@ export async function orderApi(db, auth, data) {
     });
   }
 
-  const adminActions = ['create', 'update', 'addService', 'payment', 'renewal'];
+  const adminActions = ['create', 'update', 'addService', 'payment', 'renewal', 'sendEmail'];
   if (adminActions.includes(action) && !admin) throw new OrderError('permission-denied', 'Admin access required.');
   if (![...adminActions, 'accept', 'approveDelivery'].includes(action)) invalid('Unknown action.');
   const op = text(input.operation, 60, 'request ID');
@@ -94,9 +107,9 @@ export async function orderApi(db, auth, data) {
       };
       tx.set(ref, order);
       if (!savedCustomer.exists) tx.create(customerRef, { email: customerEmail, name: customerName, syncPending: true });
-      tx.set(outbox.doc(ref.id + '-quote'), emailBody(customerEmail, 'Your NHubX quote is ready', 'Sign in with this email to review your quote.'));
+      tx.set(outbox.doc(ref.id + '-quote'), emailBody(customerEmail, 'Your NHubX quote is ready', 'Sign in with this email to review your quote.', ref.id));
     });
-    return { id: ref.id };
+    return { id: ref.id, emailId: ref.id + '-quote' };
   }
 
   const id = text(input.id, 110, 'order ID');
@@ -112,6 +125,14 @@ export async function orderApi(db, auth, data) {
       throw new OrderError('permission-denied', 'Order not available.');
     }
     if (applied.exists) return;
+    if (action === 'sendEmail') {
+      const subject = text(input.subject, 160, 'the email subject');
+      if (/[\r\n]/.test(subject)) invalid('The email subject must be one line.');
+      const message = text(input.message, 4000, 'the message');
+      tx.create(outbox.doc(id + '-' + op), emailBody(order.customerEmail, subject, message, id));
+      tx.create(operation, { at: new Date().toISOString() });
+      return;
+    }
     let changes;
     let notice;
     if (action === 'accept') {
@@ -151,12 +172,12 @@ export async function orderApi(db, auth, data) {
     }
     if (notice) {
       changes.timeline = log(order, notice);
-      tx.set(outbox.doc(id + '-' + op), emailBody(order.customerEmail, 'NHubX order update', notice + '. Sign in to see the details.'));
+      tx.set(outbox.doc(id + '-' + op), emailBody(order.customerEmail, 'NHubX order update', notice + '. Sign in to see the details.', id));
     }
     tx.update(ref, changes);
     tx.create(operation, { at: new Date().toISOString() });
   });
-  return { id };
+  return action === 'sendEmail' ? { id, emailId: id + '-' + op } : { id };
 }
 
 export async function queueRenewalReminders(db) {
@@ -177,7 +198,7 @@ export async function queueRenewalReminders(db) {
       }));
       for (const { service, ref, saved } of records) {
         if (!saved.exists) tx.create(ref, emailBody(order.customerEmail, 'NHubX renewal reminder',
-          service.type + ' renews on ' + service.dueDate + '. Amount due: LKR ' + service.amount + '. Sign in to review.'));
+          service.type + ' renews on ' + service.dueDate + '. Amount due: LKR ' + service.amount + '. Sign in to review.', candidate.id));
       }
     });
   }

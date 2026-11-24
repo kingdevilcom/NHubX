@@ -7,6 +7,7 @@ import { entryPlan, whatsappEnquiryUrl } from '../src/salesOffer.js';
 import { classifyLeadSource, leadSourceEventPath, readEnquirySource, withLeadSource } from '../src/leadSource.js';
 import { sendEnquiryAlert } from '../functions/enquiryAlert.js';
 import { orderApi } from '../server/orders.js';
+import { orderEmailSummary } from '../server/orderJobs.js';
 import { customerOrder, nextAnnualDate, reminderDays } from '../server/orderModel.js';
 
 test('all twelve palettes can rotate automatically or stay pinned', () => {
@@ -164,4 +165,20 @@ test('annual renewal advances once even when the payment request is retried', as
   assert.equal(final.services[0].dueDate, '2028-04-01');
   assert.equal(final.receipts.length, 1);
   assert.equal(final.receipts[0].amount, 499);
+  const send = { action: 'sendEmail', id, subject: 'Next step', message: 'Please review the draft.', to: 'wrong@example.com', operation: '32345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(orderApi(db, { email: 'customer@example.com', email_verified: true }, send), { code: 'permission-denied' });
+  await orderApi(db, admin, send);
+  await orderApi(db, admin, send);
+  assert.equal(records.get('orderEmails/' + id + '-' + send.operation).to, 'customer@example.com');
+  assert.equal([...records.keys()].filter((path) => path.startsWith('orderEmails/')).length, 2);
+});
+
+test('order emails distinguish provider acceptance from delivery and expose no message body', () => {
+  const record = { subject: 'Quote', to: 'customer@example.com', message: 'Private message', pending: true };
+  assert.equal(orderEmailSummary('quote', record).status, 'Queued');
+  const sent = { ...record, sentAt: '2026-11-24', resendEmailId: 'email-id' };
+  assert.equal(orderEmailSummary('quote', sent).status, 'Accepted by Resend');
+  const delivered = orderEmailSummary('quote', { ...sent, resendEvent: 'delivered' });
+  assert.equal(delivered.status, 'Delivered');
+  assert.equal('message' in delivered, false);
 });
