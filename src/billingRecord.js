@@ -8,21 +8,27 @@ const colomboDate = (value) => value
   : '';
 
 export function billingRecord(order, kind, entry) {
-  const base = { project: order.title, customer: order.customerName, orderId: order.id };
+  const orderReference = order.orderNumber || order.id;
+  const billingSequence = order.orderNumber?.replace(/^NHX-/, '') || order.id;
+  const base = { project: order.title, customer: order.customerName, orderId: orderReference };
+  const entryReference = (entries) => {
+    const position = entries?.findIndex((item) => item.id === entry.id) ?? -1;
+    return order.orderNumber && position >= 0 ? billingSequence + '-' + String(position + 1).padStart(2, '0') : entry.id;
+  };
   if (kind === 'renewal') return {
-    ...base, heading: 'Annual renewal invoice', reference: 'REN-' + entry.id + '-' + entry.dueDate,
+    ...base, heading: 'Annual renewal invoice', reference: 'REN-' + entryReference(order.services) + '-' + (order.orderNumber ? entry.dueDate.slice(0, 4) : entry.dueDate),
     dateLabel: 'Payment due', date: colomboDate(entry.dueDate),
     description: entry.type + ' · annual renewal', amount: entry.amount,
     totals: [['Amount due', entry.amount]],
   };
   if (kind === 'receipt') return {
-    ...base, heading: 'Payment receipt', reference: 'RCT-' + entry.id,
+    ...base, heading: 'Payment receipt', reference: 'RCT-' + entryReference(order.receipts),
     dateLabel: 'Payment recorded', date: colomboDate(entry.at),
     description: entry.label, amount: entry.amount,
     totals: [['Received', entry.amount]],
   };
   return {
-    ...base, heading: 'Website development invoice', reference: 'INV-' + order.id,
+    ...base, heading: 'Website development invoice', reference: 'INV-' + billingSequence,
     dateLabel: 'Quote issued', date: colomboDate(order.createdAt),
     description: 'One-time website development', amount: order.total, scope: order.scope,
     totals: [['Development total', order.total], ['Agreed deposit', order.deposit], ['Payments received', order.paid], ['Balance due', order.total - order.paid]],

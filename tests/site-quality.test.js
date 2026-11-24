@@ -8,6 +8,7 @@ import { classifyLeadSource, leadSourceEventPath, readEnquirySource, withLeadSou
 import { sendEnquiryAlert } from '../functions/enquiryAlert.js';
 import { orderTemplateType, renderEmail } from '../functions/emailTemplates.js';
 import { orderApi } from '../server/orders.js';
+import { allocateOrderNumber, assignMissingOrderNumbers } from '../server/orderNumbers.js';
 import { orderEmailSummary } from '../server/orderJobs.js';
 import { billingRecord, renderBillingRecord } from '../src/billingRecord.js';
 import { filterAdminOrders, needsCustomerAction, upcomingRenewals } from '../src/orderWorkspace.js';
@@ -224,4 +225,44 @@ test('order search and renewal priorities stay scoped to their intended status',
   assert.deepEqual(filterAdminOrders(orders, 'client@', 'Review'), []);
   assert.deepEqual(orders.filter(needsCustomerAction), [orders[0]]);
   assert.deepEqual(upcomingRenewals(orders, '2026-11-24').map(({ id, overdue }) => [id, overdue]), [['old', true], ['soon', false]]);
+});
+
+test('existing orders receive sequential numbers once without replacing their IDs', async () => {
+  assert.deepEqual(allocateOrderNumber(0), { number: 1, reference: 'NHX-00001' });
+  assert.deepEqual(allocateOrderNumber(99999), { number: 100000, reference: 'NHX-100000' });
+  const orders = new Map([
+    ['orders/legacy-a', { createdAt: '2026-01-01' }],
+    ['orders/legacy-b', { createdAt: '2026-01-02' }],
+  ]);
+  const doc = (path) => ({ path, id: path.split('/').at(-1) });
+  const snapshot = (ref) => {
+    const value = orders.get(ref.path);
+    return { id: ref.id, ref, exists: Boolean(value), data: () => value };
+  };
+  const db = {
+    collection: (path) => ({ doc: (id) => doc(path + '/' + id) }),
+    runTransaction: (work) => work({
+      getAll: async (...refs) => refs.map(snapshot),
+      update: (ref, values) => orders.set(ref.path, { ...orders.get(ref.path), ...values }),
+      set: (ref, value) => orders.set(ref.path, value),
+    }),
+  };
+  const staleSnapshots = [snapshot(doc('orders/legacy-b')), snapshot(doc('orders/legacy-a'))];
+  const assigned = await assignMissingOrderNumbers(db, staleSnapshots);
+  assert.deepEqual([...assigned], [['legacy-a', 'NHX-00001'], ['legacy-b', 'NHX-00002']]);
+  assert.deepEqual([...await assignMissingOrderNumbers(db, staleSnapshots)], [...assigned]);
+  assert.equal(orders.get('orderMetadata/numberSequence').lastNumber, 2);
+});
+
+test('numbered orders use the same readable reference across search and billing', () => {
+  const receipt = { id: 'private-uuid', label: 'Development payment', at: '2026-11-24T00:00:00Z', amount: 500 };
+  const hosting = { id: 'another-private-uuid', type: 'Hosting', amount: 499, dueDate: '2027-11-24' };
+  const order = { id: 'legacy-id', orderNumber: 'NHX-00008', title: 'Website', total: 4999, paid: 500, receipts: [receipt], services: [hosting] };
+  assert.deepEqual(filterAdminOrders([order], 'nhx-00008', ''), [order]);
+  assert.deepEqual(filterAdminOrders([order], 'INV-00008', ''), [order]);
+  assert.deepEqual(filterAdminOrders([order], 'REN-00008-01-2027', ''), [order]);
+  assert.equal(billingRecord(order, 'development').reference, 'INV-00008');
+  assert.equal(billingRecord(order, 'renewal', hosting).reference, 'REN-00008-01-2027');
+  assert.equal(billingRecord(order, 'receipt', receipt).reference, 'RCT-00008-01');
+  assert.doesNotMatch(renderBillingRecord(billingRecord(order, 'receipt', receipt)), /private-uuid|legacy-id/);
 });

@@ -12,6 +12,6 @@ export function reminderDays(dueDate, today) {
 }
 
 export function customerOrder(order) {
-  const { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt } = order;
-  return { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt };
+  const { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt, orderNumber } = order;
+  return { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt, orderNumber };
 }

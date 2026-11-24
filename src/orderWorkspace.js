@@ -15,7 +15,7 @@ export function colomboToday(now = new Date()) {
 export function upcomingRenewals(orders, today = colomboToday()) {
   const cutoff = new Date(Date.parse(today) + 30 * 86_400_000).toISOString().slice(0, 10);
   return orders.flatMap((order) => order.services.filter((service) => service.dueDate <= cutoff)
-    .map((service) => ({ ...service, orderId: order.id, orderTitle: order.title, overdue: service.dueDate < today })))
+    .map((service) => ({ ...service, orderId: order.id, orderNumber: order.orderNumber, orderTitle: order.title, overdue: service.dueDate < today })))
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
 
@@ -23,6 +23,8 @@ export const needsCustomerAction = (order) => ['Quote sent', 'Review'].includes(
 
 export function filterAdminOrders(orders, search, stage) {
   const term = search.trim().toLowerCase();
+  const billingSequence = /^(?:inv|ren|rct)-(\d+)(?:-|$)/.exec(term)?.[1];
   return orders.filter((order) => (!stage || stage === order.stage)
-    && (!term || [order.title, order.customerName, order.customerEmail, order.id].some((value) => value?.toLowerCase().includes(term))));
+    && (!term || (billingSequence && order.orderNumber === 'NHX-' + billingSequence.padStart(5, '0'))
+      || [order.orderNumber, order.title, order.customerName, order.customerEmail, order.id].some((value) => value?.toLowerCase().includes(term))));
 }

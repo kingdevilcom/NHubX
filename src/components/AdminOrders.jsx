@@ -94,20 +94,20 @@ export default function AdminOrders() {
       </details>
       {renewals.length > 0 && <details className="rounded-xl border border-white/10 bg-[#19191b] p-5">
         <summary className="cursor-pointer font-semibold">Upcoming and overdue renewals ({renewals.length})</summary>
-        <ul className="mt-3 divide-y divide-white/10">{renewals.map((item) => <li key={item.id} className="py-2 text-sm"><button type="button" className="text-left text-gray-300 hover:text-white hover:underline" onClick={() => selectOrder(item.orderId, true)}>{item.orderTitle} · {item.type} · {formatLkr(item.amount)} · <span className={item.overdue ? 'text-red-300' : 'text-gray-400'}>{item.overdue ? 'Overdue' : 'Due'} {item.dueDate}</span></button></li>)}</ul>
+        <ul className="mt-3 divide-y divide-white/10">{renewals.map((item) => <li key={item.id} className="py-2 text-sm"><button type="button" className="text-left text-gray-300 hover:text-white hover:underline" onClick={() => selectOrder(item.orderId, true)}>{item.orderNumber && item.orderNumber + ' · '}{item.orderTitle} · {item.type} · {formatLkr(item.amount)} · <span className={item.overdue ? 'text-red-300' : 'text-gray-400'}>{item.overdue ? 'Overdue' : 'Due'} {item.dueDate}</span></button></li>)}</ul>
       </details>}
       <div className="grid gap-4 lg:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.6fr)]">
         <section className="min-w-0 self-start rounded-xl border border-white/10 bg-[#19191b] p-4" aria-label="Order list">
           <div className="flex items-center justify-between gap-3"><h2 className="font-bold">Order list</h2><button type="button" aria-label="Refresh orders" disabled={loading || busy} onClick={loadOrders} className="rounded-lg border border-white/15 p-2 text-gray-300 disabled:opacity-50"><RefreshCw size={16} /></button></div>
           <div className="mt-3 grid gap-2">
-            <label className="relative"><span className="sr-only">Search orders</span><Search size={16} aria-hidden="true" className="absolute left-2.5 top-2.5 text-gray-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search customer or project" className={orderField + ' pl-8'} /></label>
+            <label className="relative"><span className="sr-only">Search orders</span><Search size={16} aria-hidden="true" className="absolute left-2.5 top-2.5 text-gray-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, invoice or customer" className={orderField + ' pl-8'} /></label>
             <label><span className="sr-only">Filter orders by stage</span><select value={stage} onChange={(event) => setStage(event.target.value)} className={orderField}><option value="">All stages</option>{stages.map((item) => <option key={item}>{item}</option>)}</select></label>
           </div>
           {loadError && <p role="alert" className="mt-3 text-sm text-red-300">{loadError}</p>}
           {loading && <p role="status" className="mt-3 text-sm text-gray-400">Loading orders…</p>}
           {!loading && !loadError && !visible.length && <p className="mt-3 text-sm text-gray-400">{orders.length ? 'No orders match these filters.' : 'No orders yet. Create a quote to start.'}</p>}
           {visible.length > 0 && <ul className="mt-3 max-h-[34rem] space-y-1 overflow-y-auto pr-1">
-            {visible.map((order) => <li key={order.id}><button type="button" aria-current={selected?.id === order.id ? 'true' : undefined} onClick={() => selectOrder(order.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === order.id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10' : 'border-transparent hover:bg-white/5'}`}><strong className="block truncate text-sm">{order.title}</strong><span className="mt-1 block truncate text-xs text-gray-400">{order.customerName} · {order.stage}</span></button></li>)}
+            {visible.map((order) => <li key={order.id}><button type="button" aria-current={selected?.id === order.id ? 'true' : undefined} onClick={() => selectOrder(order.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === order.id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10' : 'border-transparent hover:bg-white/5'}`}><strong className="block truncate text-sm">{order.title}</strong><span className="mt-1 block truncate text-xs text-gray-400">{order.orderNumber && order.orderNumber + ' · '}{order.customerName} · {order.stage}</span></button></li>)}
           </ul>}
         </section>
         <div ref={detail} className="min-w-0 scroll-mt-4">

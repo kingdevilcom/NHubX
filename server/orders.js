@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { orderEmailHistory, refreshOrderEmail } from './orderJobs.js';
 import { customerOrder, nextAnnualDate, orderStages, reminderDays, serviceTypes } from './orderModel.js';
+import { allocateOrderNumber, assignMissingOrderNumbers, orderCounter } from './orderNumbers.js';
 
 export class OrderError extends Error {
   constructor(code, message) {
@@ -30,6 +31,7 @@ function date(value) {
 const renewalDates = (services) => services.map((item) => item.dueDate);
 const log = (order, message) => [...order.timeline.slice(-59), { message, at: new Date().toISOString() }];
 const lkr = (value) => 'LKR ' + new Intl.NumberFormat('en-LK').format(value);
+const orderDetails = (order) => order.orderNumber ? [['Order', order.orderNumber], ['Project', order.title]] : [['Project', order.title]];
 const emailBody = (customerEmail, subject, message, orderId, template, details = []) => ({
   to: customerEmail,
   subject,
@@ -75,13 +77,15 @@ export async function orderApi(db, auth, data) {
   }
 
   if (action === 'list') {
-    const query = admin && input.admin === true ? orders.orderBy('createdAt', 'desc') : orders.where('customerEmail', '==', email);
+    const adminList = admin && input.admin === true;
+    const query = adminList ? orders.orderBy('createdAt', 'desc') : orders.where('customerEmail', '==', email);
     const snapshot = await query.limit(100).get();
-    return snapshot.docs.flatMap((doc) => {
-      const order = doc.data();
-      if (admin && input.admin === true) return [{ id: doc.id, ...order }];
-      if (order.ownerUid && order.ownerUid !== auth.uid) return [];
-      return [{ id: doc.id, ...customerOrder(order) }];
+    const visible = snapshot.docs.filter((doc) => adminList || !doc.data().ownerUid || doc.data().ownerUid === auth.uid);
+    const assigned = await assignMissingOrderNumbers(db, visible);
+    return visible.map((doc) => {
+      const data = doc.data();
+      const order = { ...data, orderNumber: data.orderNumber ?? assigned.get(doc.id) };
+      return { id: doc.id, ...(adminList ? order : customerOrder(order)) };
     });
   }
 
@@ -101,24 +105,27 @@ export async function orderApi(db, auth, data) {
     const customerId = createHash('sha256').update(customerEmail).digest('hex');
     const ref = orders.doc(enquiryId ? 'enquiry-' + enquiryId : op);
     const customerRef = db.collection('customers').doc(customerId);
+    const counter = orderCounter(db);
     await db.runTransaction(async (tx) => {
-      const [existing, savedCustomer] = await Promise.all([tx.get(ref), tx.get(customerRef)]);
+      const [existing, savedCustomer, sequence] = await tx.getAll(ref, customerRef, counter);
       if (existing.exists) return;
+      const assigned = allocateOrderNumber(sequence.data()?.lastNumber ?? 0);
       const createdAt = new Date().toISOString();
       const total = amount(input.total);
       const deposit = input.deposit ? amount(input.deposit) : 0;
       if (deposit > total) invalid('Deposit cannot exceed the quote total.');
       const order = {
-        customerName, customerEmail, ownerUid: null, origin: enquiryId, createdAt,
+        customerName, customerEmail, ownerUid: null, origin: enquiryId, createdAt, orderNumber: assigned.reference,
         title: text(input.title, 100, 'order title'), scope: text(input.scope, 1600, 'scope'),
         total, deposit, paid: 0, stage: 'Quote sent', dueDate: date(input.dueDate),
         privateNotes: '', deliveryUrl: '', services: [], renewalDates: [], receipts: [],
         timeline: [{ message: 'Quote sent', at: createdAt }],
       };
       tx.set(ref, order);
+      tx.set(counter, { lastNumber: assigned.number }, { merge: true });
       if (!savedCustomer.exists) tx.create(customerRef, { email: customerEmail, name: customerName, syncPending: true });
       tx.set(outbox.doc(ref.id + '-quote'), emailBody(customerEmail, 'Your NHubX quote is ready', 'Review the quote, scope, and expected delivery date in My Orders.', ref.id, 'quote', [
-        ['Project', order.title], ['Development total', lkr(order.total)], ['Deposit', lkr(order.deposit)], ['Expected delivery', order.dueDate],
+        ...orderDetails(order), ['Development total', lkr(order.total)], ['Deposit', lkr(order.deposit)], ['Expected delivery', order.dueDate],
       ]));
     });
     return { id: ref.id, emailId: ref.id + '-quote' };
@@ -141,7 +148,7 @@ export async function orderApi(db, auth, data) {
       const subject = text(input.subject, 160, 'the email subject');
       if (/[\r\n]/.test(subject)) invalid('The email subject must be one line.');
       const message = text(input.message, 4000, 'the message');
-      tx.create(outbox.doc(id + '-' + op), emailBody(order.customerEmail, subject, message, id, 'message', [['Project', order.title]]));
+      tx.create(outbox.doc(id + '-' + op), emailBody(order.customerEmail, subject, message, id, 'message', orderDetails(order)));
       tx.create(operation, { at: new Date().toISOString() });
       return;
     }
@@ -186,7 +193,7 @@ export async function orderApi(db, auth, data) {
       changes.timeline = log(order, notice);
       const payment = action === 'payment' || action === 'renewal';
       const receipt = payment ? changes.receipts.at(-1) : null;
-      const details = [['Project', order.title]];
+      const details = orderDetails(order);
       if (receipt) details.push(['Amount received', lkr(receipt.amount)]);
       if (action === 'renewal') details.push(['Next renewal', changes.services.find((item) => item.id === input.serviceId).dueDate]);
       if (action === 'payment') details.push(['Development balance', lkr(order.total - changes.paid)]);
@@ -217,7 +224,7 @@ export async function queueRenewalReminders(db) {
       for (const { service, ref, saved } of records) {
         if (!saved.exists) tx.create(ref, emailBody(order.customerEmail, 'NHubX renewal reminder',
           'Your ' + service.type.toLowerCase() + ' renewal is coming up. Sign in to review the renewal invoice.', candidate.id, 'renewal', [
-            ['Project', order.title], ['Service', service.type], ['Due date', service.dueDate], ['Amount due', lkr(service.amount)],
+            ...orderDetails(order), ['Service', service.type], ['Due date', service.dueDate], ['Amount due', lkr(service.amount)],
           ]));
       }
     });

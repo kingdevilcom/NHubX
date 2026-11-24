@@ -9,7 +9,7 @@ export default function OrderSummary({ order, showProgress = false }) {
   return (
     <>
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div><h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-gray-400">Expected delivery {dueDate}</p></div>
+        <div>{order.orderNumber && <p className="mb-1 text-xs font-bold tracking-wide text-nhubx-glow-primary">{order.orderNumber}</p>}<h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-gray-400">Expected delivery {dueDate}</p></div>
         <p className="rounded-full border border-white/15 px-3 py-1 text-sm">{stage}</p>
       </header>
       {showProgress && <ol aria-label="Order progress" className="mt-4 grid grid-cols-5 gap-1.5 text-xs sm:text-sm">

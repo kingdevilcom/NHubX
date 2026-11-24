@@ -2,6 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { firebaseServer } from '../server/firebaseAdmin.js';
 import { flushOrderJobs } from '../server/orderJobs.js';
 import { queueRenewalReminders } from '../server/orders.js';
+import { backfillOrderNumbers } from '../server/orderNumbers.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
   try {
     const client = await firebaseServer();
     if (!client) return res.status(503).json({ error: 'Firebase is awaiting configuration.' });
+    await backfillOrderNumbers(client.db);
     await queueRenewalReminders(client.db);
     await flushOrderJobs(client.db, 20);
     return res.status(200).json({ ok: true });
