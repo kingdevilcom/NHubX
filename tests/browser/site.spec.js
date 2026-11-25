@@ -179,21 +179,24 @@ test('admin sign-in preserves a quote creation deep link', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Create and send quote' })).toHaveCount(0);
 });
 
-test('admin groups sections and preserves order and email navigation', async ({ page, isMobile }) => {
-  const email = 'stharunindu@gmail.com';
+async function mockSignedInUser(page, email) {
   await page.addInitScript(({ email }) => {
     const getItem = Storage.prototype.getItem;
-    const token = 'eyJhbGciOiJub25lIn0.' + btoa(JSON.stringify({ sub: 'admin-fixture', firebase: { sign_in_provider: 'google.com' } })) + '.signature';
+    const token = 'eyJhbGciOiJub25lIn0.' + btoa(JSON.stringify({ sub: 'user-fixture', firebase: { sign_in_provider: 'google.com' } })) + '.signature';
     Storage.prototype.getItem = function (key) {
       return getItem.call(this, key) ?? (key.startsWith('firebase:authUser:') ? JSON.stringify({
-        uid: 'admin-fixture', email, emailVerified: true, isAnonymous: false, providerData: [],
+        uid: 'user-fixture', email, emailVerified: true, isAnonymous: false, providerData: [],
         stsTokenManager: { accessToken: token, refreshToken: 'fixture', expirationTime: Date.now() + 3_600_000 },
       }) : null);
     };
   }, { email });
   await page.route('https://identitytoolkit.googleapis.com/**', (route) => route.fulfill({
-    json: { users: [{ localId: 'admin-fixture', email, emailVerified: true, displayName: 'Admin fixture' }] },
+    json: { users: [{ localId: 'user-fixture', email, emailVerified: true, displayName: 'Test user' }] },
   }));
+}
+
+test('admin groups sections and preserves order and email navigation', async ({ page, isMobile }) => {
+  await mockSignedInUser(page, 'stharunindu@gmail.com');
   await page.route('**/api/orders', (route) => {
     const { action } = route.request().postDataJSON();
     const result = action === 'adminEmailConfig'
@@ -254,9 +257,55 @@ test('home shows three verified reviews and links to the full reviews page', asy
   const preview = page.getByRole('region', { name: 'Customer reviews' });
   await expect(preview.getByRole('article')).toHaveCount(3, { timeout: 15_000 });
   await expect(preview.getByText('across 4 verified reviews')).toBeVisible();
+  await expect(preview.getByRole('img', { name: '3.5 out of 5 stars' })).toBeVisible();
   await preview.getByRole('link', { name: 'View all reviews' }).click();
   await expect(page).toHaveURL(/\/reviews$/);
   await expect(page.getByText('Review example 4')).toBeVisible();
+  await expect(page.getByText('Based on 4 verified reviews')).toBeVisible();
+});
+
+test('customer can submit a verified review with keyboard-selected stars', async ({ page }) => {
+  await mockSignedInUser(page, 'customer@example.com');
+  let submitted;
+  await page.route('**/api/orders', (route) => {
+    const input = route.request().postDataJSON();
+    if (input.action === 'submitReview') {
+      submitted = input;
+      return route.fulfill({ json: { result: { status: 'pending' } } });
+    }
+    return route.fulfill({ json: { result: [{
+      id: 'completed', orderNumber: 'NHX-00002', title: 'Delivered website', stage: 'Delivered',
+      total: 5000, paid: 5000, deposit: 1000, services: [], timeline: [], receipts: [],
+    }] } });
+  });
+  await page.goto('/orders');
+  await page.getByText('Leave a review', { exact: true }).click();
+  const fourthStar = page.getByRole('radio', { name: '4 stars', exact: true });
+  await fourthStar.focus();
+  await page.keyboard.press('Space');
+  await expect(fourthStar).toBeChecked();
+  await page.getByRole('textbox', { name: /Your review/ }).fill('Helpful work.');
+  await expect(page.getByText('13/1,000 characters')).toBeVisible();
+  await page.getByRole('checkbox', { name: /I agree/ }).check();
+  await page.getByRole('button', { name: 'Submit review' }).click();
+  await expect(page.getByText('Review awaiting moderation')).toBeVisible();
+  expect(submitted).toMatchObject({ rating: 4, comment: 'Helpful work.', display: 'anonymous', consent: true });
+});
+
+test('admin review queue shows stars and can publish a low-rated verified review', async ({ page }) => {
+  await mockSignedInUser(page, 'stharunindu@gmail.com');
+  await page.route('**/api/orders', (route) => {
+    const { action } = route.request().postDataJSON();
+    return route.fulfill({ json: { result: action === 'reviewQueue' ? [{
+      id: 'completed', orderNumber: 'NHX-00002', displayName: 'Verified customer',
+      rating: 2, comment: 'Delivery took longer than expected.', createdAt: '2026-11-24T08:00:00.000Z',
+    }] : { status: 'published' } } });
+  });
+  await page.goto('/admin?tab=reviews');
+  await expect(page.getByRole('region', { name: 'Moderation queue' }).getByRole('img', { name: '2 out of 5 stars' })).toBeVisible();
+  await page.getByRole('button', { name: 'Publish review' }).click();
+  await expect(page.getByText('Review published.')).toBeVisible();
+  await expect(page.getByText('No reviews awaiting moderation.')).toBeVisible();
 });
 
 test('contact lists Matara and opens a city-level map', async ({ page }) => {

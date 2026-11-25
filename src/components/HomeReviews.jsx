@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import ReviewCard from './ReviewCard';
+import ReviewStars from './ReviewStars';
 
 export default function HomeReviews() {
   const [result, setResult] = useState(null);
@@ -20,7 +21,10 @@ export default function HomeReviews() {
       <div className="flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-8">
         <div>
           <h2 id="home-reviews" className="text-2xl font-bold tracking-tight sm:text-3xl">Customer reviews</h2>
-          {result?.count > 0 && <p className="mt-1 text-sm text-gray-300"><strong className="text-white">{result.average.toFixed(1)}/5</strong> across {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</p>}
+          {result?.count > 0 && <div className="mt-2 flex flex-wrap items-center gap-2.5">
+            <ReviewStars rating={Number(result.average.toFixed(1))} />
+            <p className="text-sm text-gray-300"><strong className="text-white">{result.average.toFixed(1)}/5</strong> across {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</p>
+          </div>}
         </div>
         <Link to="/reviews" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-nhubx-glow-primary hover:bg-white/5">
           View all reviews <ArrowRight size={16} aria-hidden="true" />
