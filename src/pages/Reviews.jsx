@@ -50,8 +50,8 @@ export default function Reviews() {
             <p className="mt-1 text-sm text-gray-300">Based on {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</p>
           </div>
         </div>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">{result.reviews.map((review, index) =>
-          <ReviewCard key={review.publishedAt + index} review={review} />
+        <div className="mt-5 grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">{result.reviews.map((review, index) =>
+          <ReviewCard key={review.publishedAt + index} review={review} expandable />
         )}</div>
         {result.next && <div className="mt-5 flex justify-center"><button type="button" onClick={loadMore} disabled={loadingMore} className="min-h-11 rounded-lg border border-white/15 px-5 text-sm font-semibold hover:bg-white/5 disabled:opacity-50">
           {loadingMore ? 'Loading more reviews…' : 'Load more reviews'}

@@ -243,10 +243,11 @@ test('reviews page explains when there are no verified reviews', async ({ page }
 });
 
 test('home shows three verified reviews and links to the full reviews page', async ({ page }) => {
+  const longerComment = 'Review example 4. ' + 'The website worked well and the updates were clear. '.repeat(3) + 'This final sentence appears after expanding.';
   const reviews = Array.from({ length: 4 }, (_, index) => ({
     displayName: 'Verified customer',
     rating: 5 - index,
-    comment: 'Review example ' + (index + 1),
+    comment: index === 3 ? longerComment : 'Review example ' + (index + 1),
     publishedAt: '2026-11-' + (24 - index) + 'T08:00:00.000Z',
   }));
   await page.route('**/api/reviews*', (route) => {
@@ -262,6 +263,15 @@ test('home shows three verified reviews and links to the full reviews page', asy
   await expect(page).toHaveURL(/\/reviews$/);
   await expect(page.getByText('Review example 4')).toBeVisible();
   await expect(page.getByText('Based on 4 verified reviews')).toBeVisible();
+  await expect(page.getByText('This final sentence appears after expanding.')).toHaveCount(0);
+  const more = page.getByRole('button', { name: 'Read more' });
+  await expect(more).toHaveAttribute('aria-expanded', 'false');
+  await more.click();
+  await expect(page.getByText(longerComment)).toBeVisible();
+  const less = page.getByRole('button', { name: 'Read less' });
+  await expect(less).toHaveAttribute('aria-expanded', 'true');
+  await less.click();
+  await expect(page.getByText('This final sentence appears after expanding.')).toHaveCount(0);
 });
 
 test('customer can submit a verified review with keyboard-selected stars', async ({ page }) => {
