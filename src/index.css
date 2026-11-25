@@ -57,23 +57,46 @@
 
 .pricing-dialog::backdrop { background: rgb(0 0 0 / .8); backdrop-filter: blur(4px); }
 
+.review-marquee {
+  --review-gap: 0.75rem;
+  --review-card-width: max(clamp(12rem, 82cqw, 17rem), calc(100cqw / 3 - var(--review-gap)));
+  --review-duration: 34s;
+  container-type: inline-size;
+  overflow: clip;
+}
+
+.review-marquee[data-two-reviews="true"] {
+  --review-card-width: max(clamp(12rem, 82cqw, 17rem), calc(50cqw - var(--review-gap)));
+  --review-duration: 25s;
+}
+
+.review-marquee:focus-visible {
+  outline-offset: -2px;
+}
+
 .review-marquee-track {
   display: flex;
   width: max-content;
-  min-width: 200%;
-  animation: review-marquee-scroll 36s linear infinite;
+  animation: review-marquee-scroll var(--review-duration) linear infinite;
 }
 
 .review-marquee-group {
   display: flex;
   flex: 0 0 auto;
-  min-width: 50%;
-  gap: 0.75rem;
-  padding-inline-end: 0.75rem;
+  gap: var(--review-gap);
+  padding-inline-end: var(--review-gap);
 }
 
 .review-marquee-group > article {
-  flex: 1 0 clamp(15rem, 70vw, 17rem);
+  flex: 0 0 auto;
+  width: var(--review-card-width);
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .review-marquee {
+    mask-image: linear-gradient(to right, transparent, black 0.5rem, black calc(100% - 0.5rem), transparent);
+  }
 }
 
 @media (hover: hover) {
@@ -92,14 +115,21 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .review-marquee {
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
   .review-marquee-track {
     animation: none;
-    min-width: 100%;
   }
 
   .review-marquee-group {
-    min-width: 100%;
     padding-inline-end: 0;
+  }
+
+  .review-marquee-group > article {
+    scroll-snap-align: start;
   }
 
   html {

@@ -269,14 +269,25 @@ test('home shows three verified reviews and links to the full reviews page', asy
   const track = preview.locator('#home-review-track');
   const pause = preview.getByRole('button', { name: 'Pause scrolling' });
   await expect(track).toHaveCSS('animation-name', 'review-marquee-scroll');
-  await pause.focus();
-  await page.keyboard.press('Enter');
+  await pause.click();
   await expect(track).toHaveCSS('animation-play-state', 'paused');
-  await page.keyboard.press('Enter');
+  const loop = await track.evaluate((element) => {
+    const [first, duplicate] = Array.from(element.children, (group) => group.getBoundingClientRect());
+    return {
+      viewportWidth: element.parentElement.clientWidth,
+      groupWidth: first.width,
+      repeatOffset: duplicate.left - first.left,
+      travelDistance: element.getBoundingClientRect().width / 2,
+    };
+  });
+  expect(loop.groupWidth).toBeGreaterThanOrEqual(loop.viewportWidth - 1);
+  expect(loop.repeatOffset).toBeCloseTo(loop.travelDistance, 0);
+  await preview.getByRole('button', { name: 'Resume scrolling' }).press('Enter');
   await expect(track).toHaveCSS('animation-play-state', 'running');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(track).toHaveCSS('animation-name', 'none');
+  await expect(track.locator(':scope > [aria-hidden="true"]')).toBeHidden();
   await expect(pause).toBeHidden();
   await preview.getByRole('link', { name: 'View all reviews' }).click();
   await expect(page).toHaveURL(/\/reviews$/);
