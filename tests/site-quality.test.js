@@ -294,7 +294,9 @@ test('custom domain email is admin-only, validates recipients, and reuses the sa
   await assert.rejects(orderApi({ collection: () => ({}) }, { email: 'customer@example.com', email_verified: true }, draft), { code: 'permission-denied' });
   await assert.rejects(adminEmail(true, { ...draft, to: 'a@example.com,b@example.com' }, deps), { code: 'invalid-argument' });
   assert.equal(requests.length, 0);
-  assert.deepEqual(await adminEmail(true, { action: 'adminEmailConfig' }, deps), { configured: true, from: env.ADMIN_EMAIL_FROM, replyTo: env.ADMIN_EMAIL_REPLY_TO });
+  assert.deepEqual(await adminEmail(true, { action: 'adminEmailConfig' }, deps), {
+    configured: true, from: env.ADMIN_EMAIL_FROM, senderAddress: 'hello@email.nhubx.com', senderDomain: 'email.nhubx.com', replyTo: env.ADMIN_EMAIL_REPLY_TO,
+  });
   assert.deepEqual(await adminEmail(true, draft, deps), { id: 'provider-id', to: draft.to });
   await adminEmail(true, draft, deps);
   assert.deepEqual(requests[0], requests[1]);
@@ -304,6 +306,13 @@ test('custom domain email is admin-only, validates recipients, and reuses the sa
   assert.equal(requests[0].body.reply_to, env.ADMIN_EMAIL_REPLY_TO);
   assert.match(requests[0].body.html, /&lt;script&gt;example&lt;\/script&gt;<br>/);
   assert.doesNotMatch(requests[0].body.html, /nhubx\.com\/orders/);
+  assert.equal(requests[0].body.from, env.ADMIN_EMAIL_FROM);
+  await adminEmail(true, { ...draft, from: 'support+sales@EMAIL.NHUBX.COM', operation: '22345678-1234-1234-1234-123456789abc' }, deps);
+  assert.equal(requests[2].body.from, 'NHubX <support+sales@EMAIL.NHUBX.COM>');
+  for (const from of ['support@nhubx.com', 'support@email.nhubx.com.example.org', 'Name <support@email.nhubx.com>', '']) {
+    await assert.rejects(adminEmail(true, { ...draft, from }, deps), /Use a From address at @email\.nhubx\.com/);
+  }
+  assert.equal(requests.length, 3);
   await assert.rejects(adminEmail(true, draft, { ...deps, request: async () => ({ ok: false, status: 403 }) }), /verified domain/);
 });
 

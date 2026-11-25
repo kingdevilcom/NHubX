@@ -3,6 +3,7 @@ import { orderButton, orderField, orderRequest } from '../orders';
 
 export default function AdminEmail() {
   const [settings, setSettings] = useState(null);
+  const [sender, setSender] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -12,7 +13,12 @@ export default function AdminEmail() {
   useEffect(() => {
     let active = true;
     orderRequest('adminEmailConfig')
-      .then((config) => { if (active) setSettings(config); })
+      .then((config) => {
+        if (active) {
+          setSettings(config);
+          setSender(config.senderAddress);
+        }
+      })
       .catch((err) => { if (active) setError(err.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -23,7 +29,7 @@ export default function AdminEmail() {
     if (!settings?.configured || busy) return;
     const form = event.currentTarget;
     const values = new FormData(form);
-    const draft = Object.fromEntries(['to', 'subject', 'message'].map((field) => [field, values.get(field).trim()]));
+    const draft = Object.fromEntries(['from', 'to', 'subject', 'message'].map((field) => [field, values.get(field).trim()]));
     const fingerprint = JSON.stringify(draft);
     setError('');
     setSentTo('');
@@ -51,13 +57,17 @@ export default function AdminEmail() {
     <section className="max-w-2xl rounded-xl border border-white/10 bg-[#19191b] p-5 sm:p-6" aria-labelledby="compose-email">
       <h2 id="compose-email" className="text-lg font-bold">Compose email</h2>
       {loading && <p role="status" className="mt-2 text-sm text-gray-400">Loading sender…</p>}
-      {settings && <dl className="mt-3 space-y-1 text-sm text-gray-300">
-        <div className="flex flex-wrap gap-x-2"><dt className="font-semibold">From</dt><dd className="break-all">{settings.from}</dd></div>
-        {settings.replyTo && <div className="flex flex-wrap gap-x-2"><dt className="font-semibold">Reply to</dt><dd className="break-all">{settings.replyTo}</dd></div>}
-      </dl>}
       {settings && !settings.configured && <p role="alert" className="mt-3 text-sm text-red-300">Check the Resend key and sender settings in Vercel.</p>}
       <form onSubmit={send} className="mt-5">
         <fieldset disabled={!settings?.configured || busy} className="space-y-4 disabled:opacity-60">
+          <div>
+            <div className="flex items-baseline justify-between gap-2">
+              <label htmlFor="admin-email-from" className="text-sm font-semibold">From</label>
+              {settings?.configured && sender !== settings.senderAddress && <button type="button" className="text-xs text-nhubx-glow-primary underline" onClick={() => setSender(settings.senderAddress)}>Use default</button>}
+            </div>
+            <input id="admin-email-from" type="email" name="from" value={sender} onChange={(event) => setSender(event.target.value)} maxLength={254} required aria-describedby="admin-email-domain" className={orderField + ' mt-1'} />
+            {settings?.configured && <p id="admin-email-domain" className="mt-1 text-xs text-gray-400">Use any address ending in @{settings.senderDomain}.{settings.replyTo && ' Replies go to ' + settings.replyTo + '.'}</p>}
+          </div>
           <label className="block text-sm font-semibold">To<input type="email" name="to" maxLength={254} placeholder="name@example.com" required className={orderField + ' mt-1'} /></label>
           <label className="block text-sm font-semibold">Subject<input name="subject" maxLength={150} required className={orderField + ' mt-1'} /></label>
           <label className="block text-sm font-semibold">Message<textarea name="message" rows={8} maxLength={10000} required className={orderField + ' mt-1'} /></label>

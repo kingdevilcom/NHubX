@@ -6,15 +6,28 @@ import { resend } from './orderJobs.js';
 const emailPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i;
 const operationPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 const validAddress = (value) => value.length <= 254 && emailPattern.test(value);
+const domainOf = (address) => address.split('@').at(-1).toLowerCase();
 
 export async function adminEmail(admin, input, { env = process.env, request = resend } = {}) {
   if (!admin) throw new OrderError('permission-denied', 'Admin access required.');
-  const from = (env.ADMIN_EMAIL_FROM || env.ORDER_EMAIL_FROM || 'NHubX <orders@email.nhubx.com>').trim();
+  const defaultFrom = (env.ADMIN_EMAIL_FROM || env.ORDER_EMAIL_FROM || 'NHubX <orders@email.nhubx.com>').trim();
   const replyTo = env.ADMIN_EMAIL_REPLY_TO?.trim();
-  const senderAddress = /^[^<>\r\n]+<([^<>]+)>$/.exec(from)?.[1] ?? from;
+  const namedSender = /^([^<>\r\n]+)<([^<>]+)>$/.exec(defaultFrom);
+  const senderAddress = namedSender?.[2] ?? defaultFrom;
+  const senderDomain = domainOf(senderAddress);
   const configured = Boolean(env.RESEND_API_KEY && validAddress(senderAddress) && (!replyTo || validAddress(replyTo)));
-  if (input.action === 'adminEmailConfig') return { from, replyTo: replyTo || null, configured };
+  if (input.action === 'adminEmailConfig') {
+    return { from: defaultFrom, senderAddress, senderDomain, replyTo: replyTo || null, configured };
+  }
   if (!configured) throw new OrderError('unavailable', 'Check the Resend key and sender settings in Vercel.');
+
+  const selectedSender = typeof input.from === 'string' ? input.from.trim() : '';
+  if (input.from !== undefined && (!validAddress(selectedSender) || domainOf(selectedSender) !== senderDomain)) {
+    throw new OrderError('invalid-argument', 'Use a From address at @' + senderDomain + '.');
+  }
+  const from = input.from === undefined || selectedSender === senderAddress
+    ? defaultFrom
+    : namedSender ? namedSender[1].trim() + ' <' + selectedSender + '>' : selectedSender;
 
   const to = typeof input.to === 'string' ? input.to.trim() : '';
   const subject = typeof input.subject === 'string' ? input.subject.trim() : '';
