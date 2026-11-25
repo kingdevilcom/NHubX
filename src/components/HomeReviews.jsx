@@ -1,42 +1,48 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import ReviewCard from './ReviewCard';
 import ReviewStars from './ReviewStars';
 
 export default function HomeReviews() {
   const [result, setResult] = useState(null);
-  const [error, setError] = useState(false);
-  const score = result?.count > 0 ? Number(result.average.toFixed(1)) : null;
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/reviews?limit=3', { signal: controller.signal }).then((response) => {
       if (!response.ok) throw new Error('Cannot load reviews.');
       return response.json();
-    }).then(setResult).catch((err) => { if (err.name !== 'AbortError') setError(true); });
+    }).then(setResult).catch(() => {});
     return () => controller.abort();
   }, []);
 
+  if (!result?.reviews.length) return null;
+
+  const score = Number(result.average.toFixed(1));
+  const moving = result.reviews.length > 1;
+  const cards = result.reviews.map((review, index) => (
+    <ReviewCard key={review.publishedAt + index} review={review} preview />
+  ));
+
   return (
-    <section aria-labelledby="home-reviews" className="mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-8">
-        <div>
-          <h2 id="home-reviews" className="text-2xl font-bold tracking-tight sm:text-3xl">Customer reviews</h2>
-          {score !== null && <div className="mt-2 flex flex-wrap items-center gap-2.5">
-            <ReviewStars rating={score} />
-            <p className="text-sm text-gray-300"><strong className="text-white">{score}/5</strong> from {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</p>
-          </div>}
+    <div role="region" aria-label="Customer reviews" className="mx-auto mt-6 max-w-4xl text-left">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-gray-300">
+          <ReviewStars rating={score} />
+          <span><strong className="text-white">{score}/5</strong> from {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</span>
         </div>
-        <Link to="/reviews" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-nhubx-glow-primary hover:bg-white/5">
-          View all reviews <ArrowRight size={16} aria-hidden="true" />
-        </Link>
+        <Link to="/reviews" className="inline-flex min-h-11 items-center font-semibold text-nhubx-glow-primary hover:underline">View all reviews</Link>
+        {moving && <button type="button" aria-controls="home-review-track" onClick={() => setPaused((value) => !value)} className="min-h-11 text-gray-300 hover:text-white motion-reduce:hidden">
+          {paused ? 'Resume scrolling' : 'Pause scrolling'}
+        </button>}
       </div>
-      {!result && !error && <p role="status" className="mt-4 text-sm text-gray-400">Loading reviews…</p>}
-      {error && <p role="status" className="mt-4 text-sm text-gray-400">Reviews are temporarily unavailable.</p>}
-      {result?.count === 0 && <p className="mt-4 text-sm text-gray-400">No verified customer reviews have been published yet.</p>}
-      {result?.reviews.length > 0 && <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {result.reviews.map((review, index) => <ReviewCard key={review.publishedAt + index} review={review} preview />)}
-      </div>}
-    </section>
+      {moving ? (
+        <div className="review-marquee overflow-hidden motion-reduce:overflow-x-auto" role="group" aria-label="Review cards" tabIndex={0}>
+          <div id="home-review-track" className="review-marquee-track" data-paused={paused}>
+            <div className="review-marquee-group">{cards}</div>
+            <div className="review-marquee-group motion-reduce:hidden" aria-hidden="true">{cards}</div>
+          </div>
+        </div>
+      ) : <div className="mx-auto max-w-sm">{cards}</div>}
+    </div>
   );
 }

@@ -266,6 +266,18 @@ test('home shows three verified reviews and links to the full reviews page', asy
   await expect(preview.getByRole('article')).toHaveCount(3, { timeout: 15_000 });
   await expect(preview.getByText('from 4 verified reviews')).toBeVisible();
   await expect(preview.getByRole('img', { name: '3.5 out of 5 stars' })).toBeVisible();
+  const track = preview.locator('#home-review-track');
+  const pause = preview.getByRole('button', { name: 'Pause scrolling' });
+  await expect(track).toHaveCSS('animation-name', 'review-marquee-scroll');
+  await pause.focus();
+  await page.keyboard.press('Enter');
+  await expect(track).toHaveCSS('animation-play-state', 'paused');
+  await page.keyboard.press('Enter');
+  await expect(track).toHaveCSS('animation-play-state', 'running');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(await page.evaluate(() => document.documentElement.clientWidth));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(track).toHaveCSS('animation-name', 'none');
+  await expect(pause).toBeHidden();
   await preview.getByRole('link', { name: 'View all reviews' }).click();
   await expect(page).toHaveURL(/\/reviews$/);
   await expect(page.getByText('Review example 4')).toBeVisible();
