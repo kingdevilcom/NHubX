@@ -296,6 +296,7 @@ test('custom domain email is admin-only, validates recipients, and reuses the sa
   assert.equal(requests.length, 0);
   assert.deepEqual(await adminEmail(true, { action: 'adminEmailConfig' }, deps), {
     configured: true, from: env.ADMIN_EMAIL_FROM, senderAddress: 'hello@email.nhubx.com', senderDomain: 'email.nhubx.com', replyTo: env.ADMIN_EMAIL_REPLY_TO,
+    founder: { address: 'founder@email.nhubx.com', name: 'Founder | NHubX' },
   });
   assert.deepEqual(await adminEmail(true, draft, deps), { id: 'provider-id', to: draft.to });
   await adminEmail(true, draft, deps);
@@ -313,6 +314,8 @@ test('custom domain email is admin-only, validates recipients, and reuses the sa
     await assert.rejects(adminEmail(true, { ...draft, from }, deps), /Use a From address at @email\.nhubx\.com/);
   }
   assert.equal(requests.length, 3);
+  await adminEmail(true, { ...draft, from: 'founder@email.nhubx.com', operation: '32345678-1234-1234-1234-123456789abc' }, deps);
+  assert.equal(requests[3].body.from, 'Founder | NHubX <founder@email.nhubx.com>');
   await assert.rejects(adminEmail(true, draft, { ...deps, request: async () => ({ ok: false, status: 403 }) }), /verified domain/);
 });
 

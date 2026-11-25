@@ -7,6 +7,8 @@ const emailPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-
 const operationPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 const validAddress = (value) => value.length <= 254 && emailPattern.test(value);
 const domainOf = (address) => address.split('@').at(-1).toLowerCase();
+const founderAddress = 'founder@email.nhubx.com';
+const founderName = 'Founder | NHubX';
 
 export async function adminEmail(admin, input, { env = process.env, request = resend } = {}) {
   if (!admin) throw new OrderError('permission-denied', 'Admin access required.');
@@ -17,7 +19,8 @@ export async function adminEmail(admin, input, { env = process.env, request = re
   const senderDomain = domainOf(senderAddress);
   const configured = Boolean(env.RESEND_API_KEY && validAddress(senderAddress) && (!replyTo || validAddress(replyTo)));
   if (input.action === 'adminEmailConfig') {
-    return { from: defaultFrom, senderAddress, senderDomain, replyTo: replyTo || null, configured };
+    const founder = senderDomain === domainOf(founderAddress) ? { address: founderAddress, name: founderName } : null;
+    return { from: defaultFrom, senderAddress, senderDomain, replyTo: replyTo || null, configured, founder };
   }
   if (!configured) throw new OrderError('unavailable', 'Check the Resend key and sender settings in Vercel.');
 
@@ -25,9 +28,10 @@ export async function adminEmail(admin, input, { env = process.env, request = re
   if (input.from !== undefined && (!validAddress(selectedSender) || domainOf(selectedSender) !== senderDomain)) {
     throw new OrderError('invalid-argument', 'Use a From address at @' + senderDomain + '.');
   }
-  const from = input.from === undefined || selectedSender === senderAddress
-    ? defaultFrom
-    : namedSender ? namedSender[1].trim() + ' <' + selectedSender + '>' : selectedSender;
+  const address = selectedSender || senderAddress;
+  let from = defaultFrom;
+  if (address.toLowerCase() === founderAddress) from = founderName + ' <' + founderAddress + '>';
+  else if (address !== senderAddress) from = namedSender ? namedSender[1].trim() + ' <' + address + '>' : address;
 
   const to = typeof input.to === 'string' ? input.to.trim() : '';
   const subject = typeof input.subject === 'string' ? input.subject.trim() : '';

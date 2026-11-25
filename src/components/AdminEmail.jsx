@@ -63,10 +63,14 @@ export default function AdminEmail() {
           <div>
             <div className="flex items-baseline justify-between gap-2">
               <label htmlFor="admin-email-from" className="text-sm font-semibold">From</label>
-              {settings?.configured && sender !== settings.senderAddress && <button type="button" className="text-xs text-nhubx-glow-primary underline" onClick={() => setSender(settings.senderAddress)}>Use default</button>}
+              {settings?.configured && <div className="flex flex-wrap gap-3">
+                {settings.founder && sender.toLowerCase() !== settings.founder.address && <button type="button" className="text-xs text-nhubx-glow-primary underline" onClick={() => setSender(settings.founder.address)}>Use Founder sender</button>}
+                {sender !== settings.senderAddress && <button type="button" className="text-xs text-nhubx-glow-primary underline" onClick={() => setSender(settings.senderAddress)}>Use default</button>}
+              </div>}
             </div>
             <input id="admin-email-from" type="email" name="from" value={sender} onChange={(event) => setSender(event.target.value)} maxLength={254} required aria-describedby="admin-email-domain" className={orderField + ' mt-1'} />
             {settings?.configured && <p id="admin-email-domain" className="mt-1 text-xs text-gray-400">Use any address ending in @{settings.senderDomain}.{settings.replyTo && ' Replies go to ' + settings.replyTo + '.'}</p>}
+            {settings?.founder && sender.trim().toLowerCase() === settings.founder.address && <p className="mt-1 text-sm text-gray-300">Recipients see <strong>{settings.founder.name}</strong>.</p>}
           </div>
           <label className="block text-sm font-semibold">To<input type="email" name="to" maxLength={254} placeholder="name@example.com" required className={orderField + ' mt-1'} /></label>
           <label className="block text-sm font-semibold">Subject<input name="subject" maxLength={150} required className={orderField + ' mt-1'} /></label>
