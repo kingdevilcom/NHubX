@@ -282,6 +282,31 @@ test('order emails distinguish provider acceptance from delivery and expose no m
   assert.equal('message' in delivered, false);
 });
 
+test('custom domain email is admin-only, validates recipients, and reuses the same Resend send reference', async () => {
+  const requests = [];
+  const env = { RESEND_API_KEY: 'test-key', ORDER_EMAIL_FROM: 'orders@email.nhubx.com', ADMIN_EMAIL_FROM: 'NHubX <hello@email.nhubx.com>', ADMIN_EMAIL_REPLY_TO: 'contact@nhubx.com' };
+  const request = async (path, options) => {
+    requests.push({ path, ...options, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ id: 'provider-id' }) };
+  };
+  const deps = { env, request };
+  const draft = { action: 'adminEmailSend', to: 'recipient@example.com', subject: 'Hello', message: '<script>example</script>\nSecond line', operation: '12345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(orderApi({ collection: () => ({}) }, { email: 'customer@example.com', email_verified: true }, draft), { code: 'permission-denied' });
+  await assert.rejects(adminEmail(true, { ...draft, to: 'a@example.com,b@example.com' }, deps), { code: 'invalid-argument' });
+  assert.equal(requests.length, 0);
+  assert.deepEqual(await adminEmail(true, { action: 'adminEmailConfig' }, deps), { configured: true, from: env.ADMIN_EMAIL_FROM, replyTo: env.ADMIN_EMAIL_REPLY_TO });
+  assert.deepEqual(await adminEmail(true, draft, deps), { id: 'provider-id', to: draft.to });
+  await adminEmail(true, draft, deps);
+  assert.deepEqual(requests[0], requests[1]);
+  assert.equal(requests[0].path, 'emails');
+  assert.equal(requests[0].headers['Idempotency-Key'], 'admin-email-' + draft.operation);
+  assert.deepEqual(requests[0].body.to, [draft.to]);
+  assert.equal(requests[0].body.reply_to, env.ADMIN_EMAIL_REPLY_TO);
+  assert.match(requests[0].body.html, /&lt;script&gt;example&lt;\/script&gt;<br>/);
+  assert.doesNotMatch(requests[0].body.html, /nhubx\.com\/orders/);
+  await assert.rejects(adminEmail(true, draft, { ...deps, request: async () => ({ ok: false, status: 403 }) }), /verified domain/);
+});
+
 test('billing records show the correct amounts and escape customer and project text', () => {
   const order = { id: 'order-1', title: 'My <script> website', customerName: 'A & B', total: 4999, deposit: 2000, paid: 2000, createdAt: '2026-11-24T00:00:00Z' };
   const development = renderBillingRecord(billingRecord(order, 'development'));
@@ -346,3 +371,4 @@ test('numbered orders use the same readable reference across search and billing'
   assert.equal(billingRecord(order, 'receipt', receipt).reference, 'RCT-00008-01');
   assert.doesNotMatch(renderBillingRecord(billingRecord(order, 'receipt', receipt)), /private-uuid|legacy-id/);
 });
+import { adminEmail } from '../server/adminEmail.js';

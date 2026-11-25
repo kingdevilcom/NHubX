@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, Layers, Loader2, LogOut, Mail, Package, RefreshCw, Settings, Star } from 'lucide-react';
+import { ArrowUpRight, BarChart3, Layers, Loader2, LogOut, Mail, Package, RefreshCw, Send, Settings, Star } from 'lucide-react';
 import { AdminProvider, useAdmin } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
 import AdminAnalytics from '../components/AdminAnalytics';
@@ -9,12 +9,14 @@ import AdminContentEditor from '../components/AdminContentEditor';
 import AdminMessages from '../components/AdminMessages';
 import AdminOrders from '../components/AdminOrders';
 import AdminReviews from '../components/AdminReviews';
+import AdminEmail from '../components/AdminEmail';
 import { fetchProjects } from '../firebase';
 
 const sections = [
   { id: 'orders', label: 'Orders', description: 'Manage quotes, delivery, payments and renewals.', icon: Package },
   { id: 'reviews', label: 'Reviews', description: 'Moderate reviews from customers with delivered orders.', icon: Star },
   { id: 'messages', label: 'Enquiries', description: 'Review incoming messages and turn enquiries into quotes.', icon: Mail },
+  { id: 'email', label: 'Email', description: 'Send a custom email from your Resend domain.', icon: Send },
   { id: 'analytics', label: 'Analytics', description: 'Track website traffic and where leads come from.', icon: BarChart3 },
   { id: 'projects', label: 'Projects', description: 'Manage the public project portfolio.', icon: Layers },
   { id: 'content', label: 'Site content', description: 'Update website content and the active fire theme.', icon: Settings },
@@ -86,6 +88,7 @@ function Admin() {
           {section.id === 'orders' && <AdminOrders />}
           {section.id === 'reviews' && <AdminReviews />}
           {section.id === 'messages' && <AdminMessages />}
+          {section.id === 'email' && <AdminEmail />}
           {section.id === 'analytics' && <AdminAnalytics />}
           {section.id === 'projects' && <AdminProjects />}
           {section.id === 'content' && <AdminContentEditor />}

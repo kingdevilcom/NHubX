@@ -7,6 +7,7 @@ const templates = {
   renewal: { category: 'Annual renewal', heading: 'Your renewal is coming up', action: 'Review renewal', footer: 'Development and annual services are billed separately.' },
   message: { category: 'Message from NHubX', action: 'Open my orders', footer: 'This message is about your NHubX order.' },
   enquiry: { category: 'Private admin notice', heading: 'New enquiries are waiting', action: 'Open admin inbox', footer: 'Sign in to Admin to review and reply.' },
+  correspondence: { category: 'Message from NHubX', action: 'Visit NHubX', footer: 'NHubX · Matara, Sri Lanka', destination: 'https://www.nhubx.com/' },
 };
 
 function escapeHtml(value) {
@@ -24,7 +25,7 @@ export function orderTemplateType(mail) {
 export function renderEmail({ type, subject, message, details = [] }) {
   const template = Object.hasOwn(templates, type) ? templates[type] : templates.message;
   const isAdmin = type === 'enquiry';
-  const destination = isAdmin ? 'https://www.nhubx.com/admin' : portal;
+  const destination = template.destination ?? (isAdmin ? 'https://www.nhubx.com/admin' : portal);
   const heading = template.heading ?? subject;
   const preview = message.replace(/\s+/g, ' ').slice(0, 120);
   const rows = details.map(([label, value]) =>

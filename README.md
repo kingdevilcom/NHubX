@@ -11,6 +11,8 @@ Set these variables under **Vercel → Project → Settings → Environment Vari
 | `FIREBASE_ADMIN_CREDENTIALS` | The Firebase server service-account JSON for `nhubx-fc6d8`, entered as a secret. |
 | `RESEND_API_KEY` | A replacement Resend Full Access key. This one key can send email and sync Contacts. |
 | `ORDER_EMAIL_FROM` | `orders@email.nhubx.com`, after verifying `email.nhubx.com` in Resend. |
+| `ADMIN_EMAIL_FROM` | Optional sender for Admin → Email, for example `NHubX <hello@email.nhubx.com>`. Defaults to `ORDER_EMAIL_FROM`. |
+| `ADMIN_EMAIL_REPLY_TO` | Optional address of a mailbox that can receive replies to custom admin emails. |
 | `CRON_SECRET` | A random secret of at least 32 characters. Vercel passes it to the renewal job. |
 
 Approve a test quote and test renewal before using real customer data. Customers synced to Contacts are created unsubscribed from Broadcasts. Existing contacts keep their current subscription status. The order portal shows bank-transfer payments once an admin records them.

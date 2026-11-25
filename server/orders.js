@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { adminEmail } from './adminEmail.js';
 import { OrderError } from './orderError.js';
 import { orderConversation } from './orderConversation.js';
 import { orderEmailHistory, refreshOrderEmail } from './orderJobs.js';
@@ -48,6 +49,7 @@ export async function orderApi(db, auth, data) {
   const admin = email === 'stharunindu@gmail.com';
   const input = data && typeof data === 'object' ? data : {};
   const { action } = input;
+  if (action === 'adminEmailConfig' || action === 'adminEmailSend') return adminEmail(admin, input);
   if (['chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview'].includes(action)) {
     return orderConversation(db, auth, admin, input);
   }

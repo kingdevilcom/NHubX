@@ -36,7 +36,7 @@ export async function refreshOrderEmail(record) {
   return orderEmailSummary(record.id, mail);
 }
 
-function resend(path, options = {}) {
+export function resend(path, options = {}) {
   return fetch('https://api.resend.com/' + path, {
     ...options,
     headers: {
