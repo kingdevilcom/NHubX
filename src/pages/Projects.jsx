@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import Card from '../components/Card';
 import ProjectDetailModal from '../components/ProjectDetailModal';
 import ProjectCaseStudies from '../components/ProjectCaseStudies';
+import ProjectReviewList from '../components/ProjectReviewList';
+import { caseStudies } from '../projectCaseStudies';
 import { useProject } from '../context/ProjectContext';
 import { Shield, Lock, Wifi, Book, Clock, Cpu } from 'lucide-react';
 import { fetchProjects, initializeDefaultProjects } from '../firebase';
@@ -147,6 +149,24 @@ const Projects = () => {
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewsByProject, setReviewsByProject] = useState({});
+  const projectReviewKeys = [
+    ...caseStudies.map(({ id }) => 'case-' + id),
+    ...projects.filter(({ id }) => /^[\w-]{1,100}$/.test(id)).map(({ id }) => 'catalog-' + id),
+  ].join(',');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const keys = projectReviewKeys.split(',');
+    for (let index = 0; index < keys.length; index += 30) {
+      const group = keys.slice(index, index + 30).join(',');
+      fetch('/api/reviews?projects=' + encodeURIComponent(group), { signal: controller.signal })
+        .then((response) => response.ok ? response.json() : null)
+        .then((result) => { if (result && !controller.signal.aborted) setReviewsByProject((current) => ({ ...current, ...result.projects })); })
+        .catch(() => {});
+    }
+    return () => controller.abort();
+  }, [projectReviewKeys]);
 
   useEffect(() => {
     document.title = "Projects | NHubX";
@@ -221,7 +241,7 @@ const Projects = () => {
 
           </motion.div>
 
-          <ProjectCaseStudies />
+          <ProjectCaseStudies reviewsByProject={reviewsByProject} />
           {loading && <p role="status" className="text-center text-gray-400 py-6">Loading the project catalogue…</p>}
 
           {/* cards */}
@@ -256,12 +276,13 @@ const Projects = () => {
                   <p className="text-gray-500 text-xs leading-relaxed mb-6">
                     {project.description}
                   </p>
+                  <ProjectReviewList reviews={reviewsByProject['catalog-' + project.id]} />
 
                 </div>
 
                 <button
                   onClick={() => openModal(project)}
-                  className="w-full text-[10px] font-bold text-white bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 px-4 py-2.5 rounded-lg transition-all uppercase tracking-wider"
+                  className="mt-3 w-full text-[10px] font-bold text-white bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 px-4 py-2.5 rounded-lg transition-all uppercase tracking-wider"
                 >
                   Inspect Module
                 </button>

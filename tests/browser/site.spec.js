@@ -318,6 +318,27 @@ test('admin review queue shows stars and can publish a low-rated verified review
   await expect(page.getByText('No reviews awaiting moderation.')).toBeVisible();
 });
 
+test('admin can link a published review and Projects shows it on the selected case study', async ({ page }) => {
+  await mockSignedInUser(page, 'stharunindu@gmail.com');
+  const review = { id: 'review-example', projectKey: '', displayName: 'Verified customer', rating: 4, comment: 'The consultancy site works well.', publishedAt: '2026-11-24T08:00:00.000Z' };
+  let linkedProject = '';
+  await page.route('**/api/orders', (route) => {
+    const input = route.request().postDataJSON();
+    if (input.action === 'reviewLinkProject') linkedProject = input.projectKey;
+    return route.fulfill({ json: { result: input.action === 'reviewPublished' ? { items: [review], next: null } : { projectKey: linkedProject } } });
+  });
+  await page.route('**/api/reviews?projects=*', (route) => route.fulfill({ json: { projects: { [linkedProject]: [review] } } }));
+  await page.goto('/admin?tab=reviews&view=published');
+  await page.getByRole('combobox', { name: 'Linked project' }).selectOption({ label: 'NextPath Advisory' });
+  await page.getByRole('button', { name: 'Save project link' }).click();
+  await expect(page.getByText('Project link saved.')).toBeVisible();
+  expect(linkedProject).toBe('case-nextpath');
+  await page.goto('/projects');
+  const project = page.getByRole('region', { name: 'Project case studies' }).getByRole('article').filter({ has: page.getByRole('heading', { name: 'NextPath Advisory' }) });
+  await expect(project.getByText(review.comment)).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Project case studies' }).getByText(review.comment)).toHaveCount(1);
+});
+
 test('contact lists Matara and opens a city-level map', async ({ page }) => {
   await page.goto('/contact');
   const map = page.getByRole('link', { name: 'Matara, Sri Lanka on Google Maps (opens in a new tab)' });

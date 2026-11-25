@@ -272,6 +272,18 @@ test('order transactions handle renewal retries, delivery feedback, private chat
   assert.equal(published.rating, 2);
   await assert.rejects(orderApi(db, customer, { ...review, resubmit: true }), /already been submitted/);
   assert.deepEqual(records.get('reviewMetadata/totals'), { count: 1, ratingSum: 2 });
+  const link = { action: 'reviewLinkProject', id: 'generated-public-id', projectKey: 'case-nextpath' };
+  await assert.rejects(orderApi(db, customer, link), { code: 'permission-denied' });
+  await assert.rejects(orderApi(db, admin, { ...link, projectKey: 'catalog-missing' }), /available project/);
+  await orderApi(db, admin, link);
+  const linked = records.get('publishedOrderReviews/generated-public-id');
+  assert.equal(linked.projectKey, 'case-nextpath');
+  assert.equal(linked.projectReviewKey, 'case-nextpath~' + linked.publishedAt + '~generated-public-id');
+  records.set('projects/catalogue-entry', { name: 'Catalogue entry' });
+  await orderApi(db, admin, { ...link, projectKey: 'catalog-catalogue-entry' });
+  assert.equal(records.get('publishedOrderReviews/generated-public-id').projectKey, 'catalog-catalogue-entry');
+  await orderApi(db, admin, { ...link, projectKey: '' });
+  assert.equal(records.get('publishedOrderReviews/generated-public-id').projectReviewKey, null);
 });
 
 test('order emails distinguish provider acceptance from delivery and expose no message body', () => {

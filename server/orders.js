@@ -3,6 +3,7 @@ import { adminEmail } from './adminEmail.js';
 import { adminMailbox } from './adminMailbox.js';
 import { OrderError } from './orderError.js';
 import { orderConversation } from './orderConversation.js';
+import { manageProjectReviews } from './projectReviews.js';
 import { orderEmailHistory, refreshOrderEmail } from './orderJobs.js';
 import { customerOrder, nextAnnualDate, orderStages, reminderDays, serviceTypes } from './orderModel.js';
 import { allocateOrderNumber, assignMissingOrderNumbers, orderCounter } from './orderNumbers.js';
@@ -50,6 +51,7 @@ export async function orderApi(db, auth, data) {
   const admin = email === 'stharunindu@gmail.com';
   const input = data && typeof data === 'object' ? data : {};
   const { action } = input;
+  if (action === 'reviewPublished' || action === 'reviewLinkProject') return manageProjectReviews(db, admin, input);
   if (action === 'adminEmailConfig' || action === 'adminEmailSend') return adminEmail(admin, input);
   if (['adminMailboxList', 'adminMailboxRead', 'adminMailboxReplies'].includes(action)) return adminMailbox(admin, input);
   if (['chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview'].includes(action)) {

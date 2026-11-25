@@ -1,12 +1,24 @@
 import { useEffect, useState } from 'react';
 import { CircleCheck, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { orderButton, orderField, orderRequest } from '../orders';
 import ReviewStars from './ReviewStars';
+import AdminPublishedReviews from './AdminPublishedReviews';
 
 const reviewDate = new Intl.DateTimeFormat('en-LK', { dateStyle: 'medium', timeZone: 'Asia/Colombo' });
 
 export default function AdminReviews() {
+  const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'published' ? 'published' : 'queue';
+  return <div className="space-y-4">
+    <nav aria-label="Review management" className="flex flex-wrap gap-2">
+      {[['queue', 'Moderation'], ['published', 'Published']].map(([id, label]) => <button key={id} type="button" aria-pressed={view === id} onClick={() => setParams(id === 'published' ? { tab: 'reviews', view: id } : { tab: 'reviews' }, { replace: true })} className="rounded-lg border border-white/15 px-3 py-2 text-sm aria-pressed:border-nhubx-glow-primary/40 aria-pressed:text-nhubx-glow-primary">{label}</button>)}
+    </nav>
+    {view === 'published' ? <AdminPublishedReviews /> : <ReviewQueue />}
+  </div>;
+}
+
+function ReviewQueue() {
   const [reviews, setReviews] = useState(null);
   const [busy, setBusy] = useState(null);
   const [notice, setNotice] = useState(null);

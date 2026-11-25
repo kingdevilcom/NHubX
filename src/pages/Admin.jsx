@@ -68,7 +68,10 @@ function AdminProjects() {
 
   if (error) return <div role="alert" className="rounded-xl border border-red-500/25 p-5 text-red-300">{error}<button type="button" onClick={load} className="ml-3 inline-flex items-center gap-2 underline"><RefreshCw size={14} />Try again</button></div>;
   if (!projects) return <p role="status" className="flex items-center gap-2 text-gray-400"><Loader2 size={18} className="motion-safe:animate-spin" /> Loading projects…</p>;
-  return <AdminProjectManager projects={projects} setProjects={setProjects} />;
+  return <div className="space-y-4">
+    <Link to="/admin?tab=reviews&view=published" className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm font-semibold text-nhubx-glow-primary hover:bg-white/5"><Star size={16} aria-hidden="true" /> Link customer reviews to projects</Link>
+    <AdminProjectManager projects={projects} setProjects={setProjects} />
+  </div>;
 }
 
 function Admin() {

@@ -1,6 +1,7 @@
 import { FieldPath } from 'firebase-admin/firestore';
 import { firebaseServer } from '../server/firebaseAdmin.js';
 import { publicReview } from '../server/orderConversation.js';
+import { reviewsByProject, validProjectReviewKey } from '../server/projectReviews.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -12,10 +13,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid review page size.' });
   }
   const limit = rawLimit === undefined ? 20 : Number(rawLimit);
+  const requestedProjects = req.query?.projects;
+  const projectKeys = typeof requestedProjects === 'string' && requestedProjects.length <= 3300
+    ? [...new Set(requestedProjects.split(','))] : [];
+  if (requestedProjects !== undefined && (!projectKeys.length || projectKeys.length > 30 || !projectKeys.every(validProjectReviewKey))) {
+    return res.status(400).json({ error: 'Invalid project list.' });
+  }
   try {
     const client = await firebaseServer();
     if (!client) return res.status(503).json({ error: 'Reviews are temporarily unavailable.' });
     const reviews = client.db.collection('publishedOrderReviews');
+    if (projectKeys.length) {
+      const projects = await reviewsByProject(reviews, projectKeys);
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
+      return res.status(200).json({ projects });
+    }
     let query = reviews.orderBy('publishedAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
     if (req.query?.before !== undefined) {
       const cursor = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z~[a-zA-Z0-9]{20}$/.test(req.query.before) && typeof req.query.before === 'string' ? req.query.before.split('~') : null;
