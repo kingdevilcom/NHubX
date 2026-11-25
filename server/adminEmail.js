@@ -1,8 +1,9 @@
+import process from 'node:process';
 import { renderEmail } from '../functions/emailTemplates.js';
 import { OrderError } from './orderError.js';
 import { resend } from './orderJobs.js';
 
-const emailPattern = /^[a-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i;
+const emailPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i;
 const operationPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 const validAddress = (value) => value.length <= 254 && emailPattern.test(value);
 
