@@ -80,7 +80,7 @@ export default function AdminOrders() {
 
   return (
     <section className="space-y-5">
-      {!loadError && (!loading || orders.length > 0) && <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+      {!loadError && (!loading || orders.length > 0) && <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         {stats.map(([label, value]) => <div key={label} className="rounded-xl border border-white/10 bg-[#19191b] p-4"><dt className="text-sm text-gray-400">{label}</dt><dd className="mt-2 text-xl font-bold sm:text-2xl">{value}</dd></div>)}
       </dl>}
       {notice && <p role="status" className="rounded-lg border border-white/10 p-3 text-sm text-gray-300">{notice}</p>}
@@ -134,18 +134,24 @@ export default function AdminOrders() {
           </section>}
           <OrderEmailPanel order={order} />
           <details className="mt-3 border-t border-white/10 pt-3">
-            <summary className="cursor-pointer font-semibold">Manage order and payments</summary>
+            <summary className="cursor-pointer font-semibold">Order details</summary>
             <form className="mt-3 grid gap-3 sm:grid-cols-2" onSubmit={(event) => submit(event, 'update', { id: order.id })}>
               <label>Stage<select key={order.stage + ':' + Boolean(hasPendingRevision(order))} name="stage" defaultValue={order.stage} className={orderField}>{(hasPendingRevision(order) ? [order.stage] : stages.slice(stages.indexOf(order.stage))).map((stage) => <option key={stage}>{stage}</option>)}</select></label>
               <label>Delivery link<input name="deliveryUrl" type="url" defaultValue={order.deliveryUrl} className={orderField} /></label>
               <label className="sm:col-span-2">Private notes<textarea name="privateNotes" maxLength={1500} defaultValue={order.privateNotes} className={orderField} /></label>
               <button className={orderButton} disabled={busy}>Save order update</button>
             </form>
+          </details>
+          <details className="mt-3 border-t border-white/10 pt-3">
+            <summary className="cursor-pointer font-semibold">Development payments</summary>
             <form className="mt-4 flex flex-wrap items-end gap-3" onSubmit={(event) => submit(event, 'payment', { id: order.id })}>
               <label>Development payment (LKR)<input name="amount" type="number" min={1} max={order.total - order.paid} step={1} required className={orderField} /></label>
               <button className={orderButton} disabled={busy || order.total === order.paid}>Record payment</button>
             </form>
-            <form className="mt-4 grid gap-3 sm:grid-cols-3" onSubmit={(event) => submit(event, 'addService', { id: order.id })}>
+          </details>
+          <details className="mt-3 border-t border-white/10 pt-3">
+            <summary className="cursor-pointer font-semibold">Annual services and renewals</summary>
+            <form className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3" onSubmit={(event) => submit(event, 'addService', { id: order.id })}>
               <label>Recurring service<select name="type" className={orderField}>{['Hosting', 'Domain', 'Maintenance'].map((type) => <option key={type}>{type}</option>)}</select></label>
               <label>Annual fee (LKR)<input name="amount" type="number" min={1} step={1} required className={orderField} /></label>
               <label>First renewal date<input name="dueDate" type="date" required className={orderField} /></label>

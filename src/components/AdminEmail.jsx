@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { orderButton, orderField, orderRequest } from '../orders';
 import AdminMailbox from './AdminMailbox';
 
+const emailFolders = { compose: 'Compose', inbox: 'Inbox', sent: 'Sent' };
+
 export default function AdminEmail() {
   const [view, setView] = useState('compose');
   return (
     <div className="space-y-4">
       <nav aria-label="Email folders" className="flex flex-wrap gap-2">
-        {['compose', 'inbox', 'sent'].map((item) => <button key={item} type="button" aria-pressed={view === item} onClick={() => setView(item)} className="rounded-lg border border-white/15 px-3 py-2 text-sm capitalize aria-pressed:border-nhubx-glow-primary/40 aria-pressed:text-nhubx-glow-primary">{item}</button>)}
+        {Object.entries(emailFolders).map(([id, label]) => <button key={id} type="button" aria-pressed={view === id} onClick={() => setView(id)} className="rounded-lg border border-white/15 px-3 py-2 text-sm aria-pressed:border-nhubx-glow-primary/40 aria-pressed:text-nhubx-glow-primary">{label}</button>)}
       </nav>
       <div hidden={view !== 'compose'}><ComposeEmail /></div>
       {view !== 'compose' && <AdminMailbox key={view} folder={view} />}

@@ -179,6 +179,59 @@ test('admin sign-in preserves a quote creation deep link', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Create and send quote' })).toHaveCount(0);
 });
 
+test('admin groups sections and preserves order and email navigation', async ({ page, isMobile }) => {
+  const email = 'stharunindu@gmail.com';
+  await page.addInitScript(({ email }) => {
+    const getItem = Storage.prototype.getItem;
+    const token = 'eyJhbGciOiJub25lIn0.' + btoa(JSON.stringify({ sub: 'admin-fixture', firebase: { sign_in_provider: 'google.com' } })) + '.signature';
+    Storage.prototype.getItem = function (key) {
+      return getItem.call(this, key) ?? (key.startsWith('firebase:authUser:') ? JSON.stringify({
+        uid: 'admin-fixture', email, emailVerified: true, isAnonymous: false, providerData: [],
+        stsTokenManager: { accessToken: token, refreshToken: 'fixture', expirationTime: Date.now() + 3_600_000 },
+      }) : null);
+    };
+  }, { email });
+  await page.route('https://identitytoolkit.googleapis.com/**', (route) => route.fulfill({
+    json: { users: [{ localId: 'admin-fixture', email, emailVerified: true, displayName: 'Admin fixture' }] },
+  }));
+  await page.route('**/api/orders', (route) => {
+    const { action } = route.request().postDataJSON();
+    const result = action === 'adminEmailConfig'
+      ? { configured: true, senderDomain: 'email.nhubx.com', senderAddress: 'orders@email.nhubx.com', recipientLimit: 25 }
+      : action === 'adminMailboxList' ? { items: [], next: null } : action === 'list' ? [{
+        id: 'fixture-order', orderNumber: 'NHX-00001', title: 'Example website', stage: 'Accepted',
+        customerName: 'Example customer', customerEmail: 'client@example.com',
+        total: 5000, paid: 0, deposit: 1000, services: [], timeline: [], receipts: [],
+      }] : [];
+    return route.fulfill({ json: { result } });
+  });
+
+  await page.goto('/admin?tab=orders&enquiry=example');
+  await expect(page.getByRole('heading', { name: 'Orders', exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('button', { name: 'Create and send quote' })).toBeVisible();
+  await expect(page.getByText('Development payments', { exact: true })).toBeVisible();
+  await expect(page.getByText('Annual services and renewals', { exact: true })).toBeVisible();
+  const navigation = page.getByRole('navigation', { name: 'Admin sections' });
+  if (isMobile) {
+    const toggle = page.getByRole('button', { name: /Admin sections Orders/i });
+    await toggle.click();
+    await expect(navigation).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(toggle).toBeFocused();
+    await toggle.click();
+  }
+  await expect(navigation.getByText('Communication', { exact: true })).toBeVisible();
+  await expect(navigation.getByText('Website', { exact: true })).toBeVisible();
+  await navigation.getByRole('link', { name: 'Email', exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\?tab=email$/);
+  await expect(page.getByRole('heading', { name: 'Compose email' })).toBeVisible();
+  if (isMobile) await expect(page.getByRole('button', { name: /Admin sections Email/i })).toHaveAttribute('aria-expanded', 'false');
+  else await expect(navigation.getByRole('link', { name: 'Email', exact: true })).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('button', { name: 'Inbox', exact: true }).click();
+  await expect(page.getByText('No email received by Resend yet.')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize().width);
+});
+
 test('reviews page explains when there are no verified reviews', async ({ page }) => {
   await page.route('**/api/reviews', (route) => route.fulfill({ json: { count: 0, average: null, reviews: [], next: null } }));
   await page.goto('/reviews');
