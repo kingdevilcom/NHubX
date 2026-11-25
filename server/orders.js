@@ -89,9 +89,9 @@ export async function orderApi(db, auth, data) {
     });
   }
 
-  const adminActions = ['create', 'update', 'addService', 'payment', 'renewal', 'sendEmail'];
+  const adminActions = ['create', 'update', 'addService', 'payment', 'renewal', 'sendEmail', 'resubmitDelivery'];
   if (adminActions.includes(action) && !admin) throw new OrderError('permission-denied', 'Admin access required.');
-  if (![...adminActions, 'accept', 'approveDelivery'].includes(action)) invalid('Unknown action.');
+  if (![...adminActions, 'accept', 'approveDelivery', 'requestChanges'].includes(action)) invalid('Unknown action.');
   const op = text(input.operation, 60, 'request ID');
   if (!/^[a-f0-9-]{36}$/i.test(op)) invalid('Invalid request ID.');
 
@@ -139,7 +139,7 @@ export async function orderApi(db, auth, data) {
     const [snap, applied] = await Promise.all([tx.get(ref), tx.get(operation)]);
     if (!snap.exists) throw new OrderError('not-found', 'Order not found.');
     const order = snap.data();
-    const customerAction = action === 'accept' || action === 'approveDelivery';
+    const customerAction = ['accept', 'approveDelivery', 'requestChanges'].includes(action);
     if (customerAction && (order.customerEmail !== email || (order.ownerUid && order.ownerUid !== auth.uid))) {
       throw new OrderError('permission-denied', 'Order not available.');
     }
@@ -158,12 +158,23 @@ export async function orderApi(db, auth, data) {
       if (order.stage !== 'Quote sent') invalid('This quote is no longer waiting for acceptance.');
       changes = { stage: 'Accepted', ownerUid: auth.uid };
       notice = 'Quote accepted';
+    } else if (action === 'requestChanges') {
+      if (order.stage !== 'Review' || order.revisionRequest?.status === 'pending') invalid('This order is not accepting review feedback right now.');
+      changes = { ownerUid: auth.uid, revisionRequest: { status: 'pending', message: text(input.message, 1500, 'your feedback'), at: new Date().toISOString() } };
+      notice = 'Customer requested changes';
+    } else if (action === 'resubmitDelivery') {
+      if (order.stage !== 'Review' || order.revisionRequest?.status !== 'pending') invalid('This order has no pending revision request.');
+      const deliveryUrl = text(input.deliveryUrl, 512, 'delivery link');
+      if (!/^https:\/\/[^\s]+$/i.test(deliveryUrl)) invalid('Use an HTTPS delivery link.');
+      changes = { deliveryUrl, revisionRequest: { ...order.revisionRequest, status: 'addressed', response: text(input.response ?? '', 1000, 'revision notes', false) } };
+      notice = 'Updated delivery ready for review';
     } else if (action === 'approveDelivery') {
-      if (order.stage !== 'Review') invalid('This order is not awaiting delivery approval.');
+      if (order.stage !== 'Review' || order.revisionRequest?.status === 'pending') invalid('This order is not awaiting delivery approval.');
       changes = { stage: 'Delivered', ownerUid: auth.uid };
       notice = 'Delivery approved';
     } else if (action === 'update') {
       if (!orderStages.includes(input.stage) || orderStages.indexOf(input.stage) < orderStages.indexOf(order.stage)) invalid('Choose the current or a later stage.');
+      if (order.revisionRequest?.status === 'pending' && input.stage !== order.stage) invalid('Send the updated delivery for review before changing the stage.');
       const deliveryUrl = text(input.deliveryUrl ?? '', 512, 'delivery link', false);
       if (deliveryUrl && !/^https:\/\/[^\s]+$/i.test(deliveryUrl)) invalid('Use an HTTPS delivery link.');
       changes = { stage: input.stage, deliveryUrl, privateNotes: text(input.privateNotes ?? '', 1500, 'notes', false) };
@@ -197,12 +208,12 @@ export async function orderApi(db, auth, data) {
       if (receipt) details.push(['Amount received', lkr(receipt.amount)]);
       if (action === 'renewal') details.push(['Next renewal', changes.services.find((item) => item.id === input.serviceId).dueDate]);
       if (action === 'payment') details.push(['Development balance', lkr(order.total - changes.paid)]);
-      tx.set(outbox.doc(id + '-' + op), emailBody(order.customerEmail, payment ? 'NHubX payment confirmed' : 'NHubX order update', notice + '.', id, payment ? 'payment' : 'update', details));
+      if (action !== 'requestChanges') tx.set(outbox.doc(id + '-' + op), emailBody(order.customerEmail, payment ? 'NHubX payment confirmed' : 'NHubX order update', notice + '.', id, payment ? 'payment' : 'update', details));
     }
     tx.update(ref, changes);
     tx.create(operation, { at: new Date().toISOString() });
   });
-  return action === 'sendEmail' ? { id, emailId: id + '-' + op } : { id };
+  return ['sendEmail', 'resubmitDelivery'].includes(action) ? { id, emailId: id + '-' + op } : { id };
 }
 
 export async function queueRenewalReminders(db) {

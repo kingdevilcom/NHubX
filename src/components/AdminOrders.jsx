@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, Search } from 'lucide-react';
 import { formatLkr, orderButton, orderField, orderRequest, stages } from '../orders';
-import { filterAdminOrders, upcomingRenewals } from '../orderWorkspace';
+import { filterAdminOrders, hasPendingRevision, upcomingRenewals } from '../orderWorkspace';
 import OrderSummary from './OrderSummary';
 import OrderEmailPanel from './OrderEmailPanel';
 
@@ -50,7 +50,7 @@ export default function AdminOrders() {
       const result = await orderRequest(action, { ...input, operation: retry.current.operation });
       retry.current = null;
       if (action !== 'update') form.reset();
-      setNotice(action === 'create' ? 'Quote saved. Open Customer email on the order to check its email status.' : 'Saved.');
+      setNotice(action === 'create' ? 'Quote saved. Open Customer email on the order to check its email status.' : action === 'resubmitDelivery' ? 'Updated delivery saved and customer notification queued.' : 'Saved.');
       await loadOrders();
       if (action === 'create') {
         if (enquiryId) setParams({ tab: 'orders' }, { replace: true });
@@ -67,13 +67,14 @@ export default function AdminOrders() {
   const stats = [
     ['Open orders', orders.filter((order) => order.stage !== 'Delivered').length],
     ['Quotes awaiting approval', orders.filter((order) => order.stage === 'Quote sent').length],
+    ['Changes requested', orders.filter(hasPendingRevision).length],
     ['Unpaid development', formatLkr(orders.filter((order) => order.stage !== 'Quote sent').reduce((sum, order) => sum + order.total - order.paid, 0))],
     ['Renewals due soon or overdue', renewals.length],
   ];
 
   return (
     <section className="space-y-5">
-      {!loadError && (!loading || orders.length > 0) && <dl className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      {!loadError && (!loading || orders.length > 0) && <dl className="grid grid-cols-2 gap-3 xl:grid-cols-5">
         {stats.map(([label, value]) => <div key={label} className="rounded-xl border border-white/10 bg-[#19191b] p-4"><dt className="text-sm text-gray-400">{label}</dt><dd className="mt-2 text-xl font-bold sm:text-2xl">{value}</dd></div>)}
       </dl>}
       {notice && <p role="status" className="rounded-lg border border-white/10 p-3 text-sm text-gray-300">{notice}</p>}
@@ -101,13 +102,13 @@ export default function AdminOrders() {
           <div className="flex items-center justify-between gap-3"><h2 className="font-bold">Order list</h2><button type="button" aria-label="Refresh orders" disabled={loading || busy} onClick={loadOrders} className="rounded-lg border border-white/15 p-2 text-gray-300 disabled:opacity-50"><RefreshCw size={16} /></button></div>
           <div className="mt-3 grid gap-2">
             <label className="relative"><span className="sr-only">Search orders</span><Search size={16} aria-hidden="true" className="absolute left-2.5 top-2.5 text-gray-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, invoice or customer" className={orderField + ' pl-8'} /></label>
-            <label><span className="sr-only">Filter orders by stage</span><select value={stage} onChange={(event) => setStage(event.target.value)} className={orderField}><option value="">All stages</option>{stages.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span className="sr-only">Filter orders by stage</span><select value={stage} onChange={(event) => setStage(event.target.value)} className={orderField}><option value="">All stages</option><option value="revision">Changes requested</option>{stages.map((item) => <option key={item}>{item}</option>)}</select></label>
           </div>
           {loadError && <p role="alert" className="mt-3 text-sm text-red-300">{loadError}</p>}
           {loading && <p role="status" className="mt-3 text-sm text-gray-400">Loading orders…</p>}
           {!loading && !loadError && !visible.length && <p className="mt-3 text-sm text-gray-400">{orders.length ? 'No orders match these filters.' : 'No orders yet. Create a quote to start.'}</p>}
           {visible.length > 0 && <ul className="mt-3 max-h-[34rem] space-y-1 overflow-y-auto pr-1">
-            {visible.map((order) => <li key={order.id}><button type="button" aria-current={selected?.id === order.id ? 'true' : undefined} onClick={() => selectOrder(order.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === order.id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10' : 'border-transparent hover:bg-white/5'}`}><strong className="block truncate text-sm">{order.title}</strong><span className="mt-1 block truncate text-xs text-gray-400">{order.orderNumber && order.orderNumber + ' · '}{order.customerName} · {order.stage}</span></button></li>)}
+            {visible.map((order) => <li key={order.id}><button type="button" aria-current={selected?.id === order.id ? 'true' : undefined} onClick={() => selectOrder(order.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === order.id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10' : 'border-transparent hover:bg-white/5'}`}><strong className="block truncate text-sm">{order.title}</strong><span className="mt-1 block truncate text-xs text-gray-400">{order.orderNumber && order.orderNumber + ' · '}{order.customerName} · {hasPendingRevision(order) ? 'Changes requested' : order.stage}</span></button></li>)}
           </ul>}
         </section>
         <div ref={detail} className="min-w-0 scroll-mt-4">
@@ -115,11 +116,20 @@ export default function AdminOrders() {
         <article key={order.id} className="rounded-xl border border-white/10 bg-[#19191b] p-5">
           <OrderSummary order={order} />
           <p className="mt-3 break-all text-sm text-gray-400">{order.customerName} · {order.customerEmail}</p>
+          {order.revisionRequest && <section aria-label="Review feedback" className="mt-4 rounded-xl border border-nhubx-glow-primary/30 bg-nhubx-glow-primary/5 p-4">
+            <h3 className="font-bold">{hasPendingRevision(order) ? 'Changes requested' : 'Latest review feedback'}</h3>
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm text-gray-300">{order.revisionRequest.message}</p>
+            {hasPendingRevision(order) ? <form className="mt-4 space-y-3" onSubmit={(event) => submit(event, 'resubmitDelivery', { id: order.id })}>
+              <label className="block text-sm">Updated delivery link<input className={orderField + ' mt-1'} name="deliveryUrl" type="url" maxLength={512} defaultValue={order.deliveryUrl} required /></label>
+              <label className="block text-sm">What changed? <span className="text-gray-400">(optional)</span><textarea className={orderField + ' mt-1'} rows={3} maxLength={1000} name="response" /></label>
+              <button className={orderButton} disabled={busy}>Send updated delivery for review</button>
+            </form> : order.revisionRequest.response && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-gray-400">Your response: {order.revisionRequest.response}</p>}
+          </section>}
           <OrderEmailPanel order={order} />
           <details className="mt-3 border-t border-white/10 pt-3">
             <summary className="cursor-pointer font-semibold">Manage order and payments</summary>
             <form className="mt-3 grid gap-3 sm:grid-cols-2" onSubmit={(event) => submit(event, 'update', { id: order.id })}>
-              <label>Stage<select key={order.stage} name="stage" defaultValue={order.stage} className={orderField}>{stages.slice(stages.indexOf(order.stage)).map((stage) => <option key={stage}>{stage}</option>)}</select></label>
+              <label>Stage<select key={order.stage + ':' + Boolean(hasPendingRevision(order))} name="stage" defaultValue={order.stage} className={orderField}>{(hasPendingRevision(order) ? [order.stage] : stages.slice(stages.indexOf(order.stage))).map((stage) => <option key={stage}>{stage}</option>)}</select></label>
               <label>Delivery link<input name="deliveryUrl" type="url" defaultValue={order.deliveryUrl} className={orderField} /></label>
               <label className="sm:col-span-2">Private notes<textarea name="privateNotes" maxLength={1500} defaultValue={order.privateNotes} className={orderField} /></label>
               <button className={orderButton} disabled={busy}>Save order update</button>

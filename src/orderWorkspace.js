@@ -19,12 +19,13 @@ export function upcomingRenewals(orders, today = colomboToday()) {
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 }
 
-export const needsCustomerAction = (order) => ['Quote sent', 'Review'].includes(order.stage);
+export const hasPendingRevision = (order) => order.stage === 'Review' && order.revisionRequest?.status === 'pending';
+export const needsCustomerAction = (order) => ['Quote sent', 'Review'].includes(order.stage) && !hasPendingRevision(order);
 
 export function filterAdminOrders(orders, search, stage) {
   const term = search.trim().toLowerCase();
   const billingSequence = /^(?:inv|ren|rct)-(\d+)(?:-|$)/.exec(term)?.[1];
-  return orders.filter((order) => (!stage || stage === order.stage)
+  return orders.filter((order) => (!stage || (stage === 'revision' ? hasPendingRevision(order) : stage === order.stage))
     && (!term || (billingSequence && order.orderNumber === 'NHX-' + billingSequence.padStart(5, '0'))
       || [order.orderNumber, order.title, order.customerName, order.customerEmail, order.id].some((value) => value?.toLowerCase().includes(term))));
 }

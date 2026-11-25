@@ -190,6 +190,25 @@ test('annual renewal advances once even when the payment request is retried', as
   await orderApi(db, admin, send);
   assert.equal(records.get('orderEmails/' + id + '-' + send.operation).to, 'customer@example.com');
   assert.equal([...records.keys()].filter((path) => path.startsWith('orderEmails/')).length, 2);
+
+  records.set('orders/review', { customerEmail: 'customer@example.com', stage: 'Review', timeline: [], title: 'Review project' });
+  const customer = { email: 'customer@example.com', email_verified: true, uid: 'customer' };
+  const feedback = { action: 'requestChanges', id: 'review', message: 'Please update the homepage.', operation: '42345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(orderApi(db, { ...customer, email: 'another@example.com' }, feedback), { code: 'permission-denied' });
+  await orderApi(db, customer, feedback);
+  const approval = { action: 'approveDelivery', id: 'review', operation: '52345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(orderApi(db, customer, approval), /not awaiting delivery approval/);
+  assert.equal(records.get('orders/review').revisionRequest.status, 'pending');
+  assert.equal(needsCustomerAction(records.get('orders/review')), false);
+  assert.equal(filterAdminOrders([records.get('orders/review')], '', 'revision').length, 1);
+  const update = { action: 'resubmitDelivery', id: 'review', deliveryUrl: 'https://example.com/updated', response: 'Homepage updated.', operation: '62345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(orderApi(db, customer, update), { code: 'permission-denied' });
+  await orderApi(db, admin, update);
+  assert.equal(records.get('orders/review').revisionRequest.status, 'addressed');
+  assert.equal(needsCustomerAction(records.get('orders/review')), true);
+  assert.equal(records.get('orderEmails/review-' + update.operation).pending, true);
+  await orderApi(db, customer, approval);
+  assert.equal(records.get('orders/review').stage, 'Delivered');
 });
 
 test('order emails distinguish provider acceptance from delivery and expose no message body', () => {
