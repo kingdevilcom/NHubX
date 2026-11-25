@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const reviewDate = new Intl.DateTimeFormat('en-LK', { dateStyle: 'medium', timeZone: 'Asia/Colombo' });
+import ReviewCard from '../components/ReviewCard';
 
 export default function Reviews() {
   const [result, setResult] = useState(null);
@@ -44,13 +43,7 @@ export default function Reviews() {
       {result?.count > 0 && <div className="mt-6">
         <p className="text-lg font-bold">{result.average.toFixed(1)}/5 <span className="ml-2 text-sm font-normal text-gray-400">across {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</span></p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">{result.reviews.map((review, index) =>
-          <article className="glass rounded-xl p-5" key={review.publishedAt + index}>
-            <p className="font-semibold text-nhubx-glow-primary">{review.rating}/5 stars</p>
-            <blockquote className="mt-3 whitespace-pre-wrap break-words text-gray-300">{review.comment}</blockquote>
-            <p className="mt-4 text-sm font-semibold">{review.displayName}</p>
-            {review.displayName !== 'Verified customer' && <p className="text-xs text-gray-400">Verified customer</p>}
-            <time className="mt-1 block text-xs text-gray-400" dateTime={review.publishedAt}>{reviewDate.format(new Date(review.publishedAt))}</time>
-          </article>
+          <ReviewCard key={review.publishedAt + index} review={review} />
         )}</div>
         {result.next && <button type="button" onClick={loadMore} disabled={loadingMore} className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm">
           {loadingMore ? 'Loading more reviews…' : 'Load more reviews'}

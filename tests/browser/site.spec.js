@@ -239,6 +239,26 @@ test('reviews page explains when there are no verified reviews', async ({ page }
   await expect(page.getByText('No verified customer reviews have been published yet.')).toBeVisible();
 });
 
+test('home shows three verified reviews and links to the full reviews page', async ({ page }) => {
+  const reviews = Array.from({ length: 4 }, (_, index) => ({
+    displayName: 'Verified customer',
+    rating: 5 - index,
+    comment: 'Review example ' + (index + 1),
+    publishedAt: '2026-11-' + (24 - index) + 'T08:00:00.000Z',
+  }));
+  await page.route('**/api/reviews*', (route) => {
+    const limit = new URL(route.request().url()).searchParams.get('limit');
+    return route.fulfill({ json: { count: 4, average: 3.5, reviews: limit === '3' ? reviews.slice(0, 3) : reviews, next: null } });
+  });
+  await page.goto('/');
+  const preview = page.getByRole('region', { name: 'Customer reviews' });
+  await expect(preview.getByRole('article')).toHaveCount(3, { timeout: 15_000 });
+  await expect(preview.getByText('across 4 verified reviews')).toBeVisible();
+  await preview.getByRole('link', { name: 'View all reviews' }).click();
+  await expect(page).toHaveURL(/\/reviews$/);
+  await expect(page.getByText('Review example 4')).toBeVisible();
+});
+
 test('contact lists Matara and opens a city-level map', async ({ page }) => {
   await page.goto('/contact');
   const map = page.getByRole('link', { name: 'Matara, Sri Lanka on Google Maps (opens in a new tab)' });
