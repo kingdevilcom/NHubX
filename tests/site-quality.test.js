@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { adminEmail } from '../server/adminEmail.js';
+import { adminMailbox } from '../server/adminMailbox.js';
 import { fireThemeVariables, monthlyFireThemes, nextFireThemeChange, resolveFireTheme } from '../src/fireTheme.js';
 import { preparePlanEnquiry } from '../src/planEnquiry.js';
 import { getEnquiryPlan, getEnquiryStage, isAnalyticsEventPath, pricingEventPaths, summarizeRecentEnquiries } from '../src/enquiryTracking.js';
@@ -338,6 +340,37 @@ test('admin batch emails deduplicate recipients and send a private copy to each 
   assert.ok(requests[0].body.every((email) => email.subject === 'Hello' && !email.cc && !email.bcc));
 });
 
+test('admin mailbox verifies access and matches replies by Message-ID', async () => {
+  const id = '4ef9a417-02e9-4d39-ad75-9611e0fcc33c';
+  const replyId = '37e4414c-5e25-4dbc-a071-43552a4bd53b';
+  const otherId = '3a9f8c2b-1e5d-4f8a-9c7b-2d6e5f8a9c7b';
+  const original = { id, from: 'Founder | NHubX <founder@email.nhubx.com>', to: ['customer@example.com'], subject: 'Update', message_id: '<original@email.example>', created_at: '2026-11-20T12:00:00Z' };
+  const reply = { id: replyId, subject: 'Different subject', created_at: '2026-11-21T12:00:00Z', headers: { References: '<earlier@email.example> <original@email.example>' }, text: 'Reply', html: '<p>Reply</p>' };
+  const other = { ...reply, id: otherId, subject: 'Re: Update', headers: { 'In-Reply-To': '<not-original@email.example>' } };
+  const requests = [];
+  const deps = { env: { RESEND_API_KEY: 'send-key', RESEND_MAILBOX_API_KEY: 'mailbox-key' }, request: async (path, options) => {
+    requests.push(path);
+    assert.equal(options.headers.Authorization, 'Bearer mailbox-key');
+    const data = path.startsWith('emails/receiving?') ? { data: [reply, other], has_more: true }
+      : path.includes(replyId) ? reply : path.includes(otherId) ? other : original;
+    return { ok: true, json: async () => data };
+  } };
+  await assert.rejects(adminMailbox(false, { action: 'adminMailboxList', folder: 'inbox' }, deps), { code: 'permission-denied' });
+  await assert.rejects(adminMailbox(true, { action: 'adminMailboxRead', folder: 'inbox', id: '../secret' }, deps), { code: 'invalid-argument' });
+  assert.equal(requests.length, 0);
+  const page = await adminMailbox(true, { action: 'adminMailboxList', folder: 'inbox', after: id }, deps);
+  assert.equal(requests[0], 'emails/receiving?limit=20&after=' + id);
+  assert.equal(page.next, otherId);
+  assert.equal('headers' in page.items[0], false);
+  const result = await adminMailbox(true, { action: 'adminMailboxReplies', folder: 'sent', id }, deps);
+  assert.equal(requests[2], 'emails/receiving?limit=5&to=founder%40email.nhubx.com');
+  assert.equal(result.items.length, 1);
+  assert.equal(result.items[0].id, replyId);
+  assert.equal(result.items[0].text, 'Reply');
+  assert.equal(result.items[0].html, '');
+  assert.equal(result.next, otherId);
+});
+
 test('billing records show the correct amounts and escape customer and project text', () => {
   const order = { id: 'order-1', title: 'My <script> website', customerName: 'A & B', total: 4999, deposit: 2000, paid: 2000, createdAt: '2026-11-24T00:00:00Z' };
   const development = renderBillingRecord(billingRecord(order, 'development'));
@@ -402,4 +435,3 @@ test('numbered orders use the same readable reference across search and billing'
   assert.equal(billingRecord(order, 'receipt', receipt).reference, 'RCT-00008-01');
   assert.doesNotMatch(renderBillingRecord(billingRecord(order, 'receipt', receipt)), /private-uuid|legacy-id/);
 });
-import { adminEmail } from '../server/adminEmail.js';

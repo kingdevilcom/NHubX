@@ -13,7 +13,10 @@ Set these variables under **Vercel → Project → Settings → Environment Vari
 | `ORDER_EMAIL_FROM` | `orders@email.nhubx.com`, after verifying `email.nhubx.com` in Resend. |
 | `ADMIN_EMAIL_FROM` | Optional default sender for Admin → Email, for example `NHubX <hello@email.nhubx.com>`. Defaults to `ORDER_EMAIL_FROM`. Admins can enter any address on the same sending domain in the composer. |
 | `ADMIN_EMAIL_REPLY_TO` | Optional address of a mailbox that can receive replies to custom admin emails. |
+| `RESEND_MAILBOX_API_KEY` | Optional full-access Resend API key for Admin → Email → Inbox and Sent. Defaults to `RESEND_API_KEY` if that key has full access. |
 | `CRON_SECRET` | A random secret of at least 32 characters. Vercel passes it to the renewal job. |
+
+Enable Receiving for the destination domain in Resend and apply the MX record Resend provides. For replies to appear in the admin inbox, use a From or Reply-To address routed to Resend Receiving. The admin Sent view matches replies via Message-ID headers.
 
 Approve a test quote and test renewal before using real customer data. Customers synced to Contacts are created unsubscribed from Broadcasts. Existing contacts keep their current subscription status. The order portal shows bank-transfer payments once an admin records them.
 

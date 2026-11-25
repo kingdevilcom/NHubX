@@ -16,7 +16,7 @@ const sections = [
   { id: 'orders', label: 'Orders', description: 'Manage quotes, delivery, payments and renewals.', icon: Package },
   { id: 'reviews', label: 'Reviews', description: 'Moderate reviews from customers with delivered orders.', icon: Star },
   { id: 'messages', label: 'Enquiries', description: 'Review incoming messages and turn enquiries into quotes.', icon: Mail },
-  { id: 'email', label: 'Email', description: 'Send a custom email from your Resend domain.', icon: Send },
+  { id: 'email', label: 'Email', description: 'Compose email, read your inbox and find replies to sent messages.', icon: Send },
   { id: 'analytics', label: 'Analytics', description: 'Track website traffic and where leads come from.', icon: BarChart3 },
   { id: 'projects', label: 'Projects', description: 'Manage the public project portfolio.', icon: Layers },
   { id: 'content', label: 'Site content', description: 'Update website content and the active fire theme.', icon: Settings },
