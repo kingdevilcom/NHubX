@@ -112,7 +112,10 @@ export default function CustomerOrders() {
           {order.revisionRequest && <details className="mb-4 rounded-xl border border-white/10 p-4 text-sm"><summary className="cursor-pointer font-semibold">Latest review feedback</summary><p className="mt-2 whitespace-pre-wrap break-words text-gray-300">{order.revisionRequest.message}</p>{order.revisionRequest.response && <p className="mt-3 whitespace-pre-wrap break-words text-gray-400">NHubX: {order.revisionRequest.response}</p>}</details>}
           <OrderSummary order={order} showProgress />
           <OrderChat order={order} onRead={markChatRead} />
-          <OrderReview order={order} />
+          <OrderReview order={order} onSubmitted={(id) => setResult((current) => current && ({
+            ...current,
+            orders: current.orders.map((item) => item.id === id ? { ...item, reviewStatus: 'pending', reviewModerationReason: null } : item),
+          }))} />
         </article>
       ))}
     </section>

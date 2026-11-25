@@ -185,3 +185,11 @@ test('reviews page explains when there are no verified reviews', async ({ page }
   await expect(page.getByRole('heading', { name: 'Customer reviews' })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText('No verified customer reviews have been published yet.')).toBeVisible();
 });
+
+test('contact lists Matara and opens a city-level map', async ({ page }) => {
+  await page.goto('/contact');
+  const map = page.getByRole('link', { name: 'Matara, Sri Lanka on Google Maps (opens in a new tab)' });
+  await expect(map).toBeVisible({ timeout: 15_000 });
+  await expect(map).toHaveAttribute('href', /query=Matara%2C%20Sri%20Lanka$/);
+  await expect(page.getByRole('contentinfo').getByText('Matara, Sri Lanka')).toBeVisible();
+});

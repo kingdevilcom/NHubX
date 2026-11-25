@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+const reviewDate = new Intl.DateTimeFormat('en-LK', { dateStyle: 'medium', timeZone: 'Asia/Colombo' });
+
 export default function Reviews() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(false);
@@ -47,6 +49,7 @@ export default function Reviews() {
             <blockquote className="mt-3 whitespace-pre-wrap break-words text-gray-300">{review.comment}</blockquote>
             <p className="mt-4 text-sm font-semibold">{review.displayName}</p>
             {review.displayName !== 'Verified customer' && <p className="text-xs text-gray-400">Verified customer</p>}
+            <time className="mt-1 block text-xs text-gray-400" dateTime={review.publishedAt}>{reviewDate.format(new Date(review.publishedAt))}</time>
           </article>
         )}</div>
         {result.next && <button type="button" onClick={loadMore} disabled={loadingMore} className="mt-5 rounded-lg border border-white/15 px-4 py-2 text-sm">

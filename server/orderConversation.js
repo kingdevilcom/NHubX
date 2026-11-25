@@ -53,6 +53,7 @@ export async function orderConversation(db, auth, admin, input) {
       if (!order || !review) throw new OrderError('not-found', 'Review not found.');
       if (review.status === input.status) return { status: review.status };
       if (review.status !== 'pending') invalid('This review has already been moderated.');
+      if (input.createdAt && input.createdAt !== review.createdAt) invalid('This review has changed. Refresh the queue before moderating it.');
       const publishedAt = input.status === 'published' ? new Date().toISOString() : null;
       const reason = input.status === 'withheld' ? input.reason : null;
       if (publishedAt) {
@@ -74,11 +75,18 @@ export async function orderConversation(db, auth, admin, input) {
       const order = orderSnapshot.data();
       assertOwner(order);
       if (order.stage !== 'Delivered') invalid('Reviews are available after delivery.');
-      if (reviewSnapshot.exists) invalid('A review has already been submitted for this order.');
+      const previous = reviewSnapshot.data();
+      if (previous && !(input.resubmit === true && previous.status === 'withheld')) {
+        invalid('A review has already been submitted for this order.');
+      }
       const firstName = typeof order.customerName === 'string' ? order.customerName.trim().split(/\s+/)[0] : '';
       const displayName = input.display === 'firstName' && firstName && !firstName.includes('@') ? firstName : 'Verified customer';
-      tx.create(reviewRef, { rating: input.rating, comment, displayName, status: 'pending', createdAt: new Date().toISOString(), orderNumber: order.orderNumber ?? null });
-      tx.update(ref, { reviewStatus: 'pending', ownerUid: auth.uid });
+      const previousTime = previous ? Date.parse(previous.createdAt) : 0;
+      const createdAt = new Date(Math.max(Date.now(), previousTime + 1)).toISOString();
+      const review = { rating: input.rating, comment, displayName, status: 'pending', createdAt, orderNumber: order.orderNumber ?? null };
+      if (previous) tx.set(reviewRef, review);
+      else tx.create(reviewRef, review);
+      tx.update(ref, { reviewStatus: 'pending', reviewModerationReason: null, ownerUid: auth.uid });
       return { status: 'pending' };
     });
   }
@@ -86,14 +94,21 @@ export async function orderConversation(db, auth, admin, input) {
     return db.runTransaction(async (tx) => {
       const order = (await tx.get(ref)).data();
       access(order);
-      const older = Number.isSafeInteger(input.before) && input.before > 0;
-      let query = messages.orderBy('sequence', 'desc');
-      if (older) query = query.startAfter(input.before);
+      const before = Number.isSafeInteger(input.before) && input.before > 0 ? input.before : null;
+      const after = !before && Number.isSafeInteger(input.after) && input.after >= 0 ? input.after : null;
+      const unread = role === 'admin' ? 'adminUnread' : 'customerUnread';
+      const latest = order.chat?.sequence ?? 0;
+      if (after === latest && !order.chat?.[unread]) return { messages: [], older: false, more: false };
+      let query = messages.orderBy('sequence', after === null ? 'desc' : 'asc');
+      const cursor = before ?? after;
+      if (cursor !== null) query = query.startAfter(cursor);
       const page = await tx.get(query.limit(31));
       const shown = page.docs.slice(0, 30).map((item) => ({ id: item.id, ...item.data() }));
-      const unread = role === 'admin' ? 'adminUnread' : 'customerUnread';
-      if (!older && order.chat?.[unread]) tx.update(ref, { chat: { ...order.chat, [unread]: 0 } });
-      return { messages: shown.reverse(), older: page.size > 30 };
+      const more = after !== null && page.size > 30;
+      if (!before && !more && order.chat?.[unread] && (after === null || shown.at(-1)?.sequence === latest)) {
+        tx.update(ref, { chat: { ...order.chat, [unread]: 0 } });
+      }
+      return { messages: after === null ? shown.reverse() : shown, older: after === null && page.size > 30, more };
     });
   }
   if (action === 'chatSend') {

@@ -273,9 +273,9 @@ const Contact = () => {
                 Based in
               </p>
 
-              <p className="text-gray-400 font-semibold mt-0.5">
+              <a href="https://www.google.com/maps/search/?api=1&query=Matara%2C%20Sri%20Lanka" target="_blank" rel="noopener noreferrer" className="mt-0.5 inline-block font-semibold text-gray-300 underline decoration-white/25 underline-offset-4 hover:text-white" aria-label="Matara, Sri Lanka on Google Maps (opens in a new tab)">
                 Matara, Sri Lanka
-              </p>
+              </a>
 
             </div>
 

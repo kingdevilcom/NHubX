@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { orderButton, orderField, orderRequest } from '../orders';
 
-export default function OrderReview({ order }) {
-  const [submitted, setSubmitted] = useState(false);
-  const status = order.reviewStatus ?? (submitted ? 'pending' : null);
+export default function OrderReview({ order, onSubmitted }) {
+  const [editing, setEditing] = useState(false);
+  const status = order.reviewStatus;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function submit(event) {
@@ -12,20 +12,24 @@ export default function OrderReview({ order }) {
     setError('');
     const values = new FormData(event.currentTarget);
     try {
-      await orderRequest('submitReview', { id: order.id, rating: Number(values.get('rating')), display: values.get('display'), comment: values.get('comment'), consent: values.get('consent') === 'on' });
-      setSubmitted(true);
+      await orderRequest('submitReview', { id: order.id, rating: Number(values.get('rating')), display: values.get('display'), comment: values.get('comment'), consent: values.get('consent') === 'on', resubmit: editing });
+      onSubmitted(order.id);
+      setEditing(false);
     } catch (err) { setError(err.message); }
     finally { setBusy(false); }
   }
 
   if (order.stage !== 'Delivered') return null;
-  if (status) return <p role="status" className="mt-4 rounded-xl border border-white/10 p-3 text-sm text-gray-300">
-    {status === 'pending' ? 'Thanks for your review. It’s awaiting moderation.' : status === 'published' ? 'Your verified review is published.' : 'Your review was withheld.'}
-    {status === 'withheld' && order.reviewModerationReason && ' Reason: ' + order.reviewModerationReason}
-  </p>;
+  if (status && !editing) return <div className="mt-4 rounded-xl border border-white/10 p-3 text-sm text-gray-300">
+    <p role="status">{status === 'pending' ? 'Thanks for your review. It’s awaiting moderation.' : status === 'published' ? 'Your verified review is published.' : 'Your review was withheld.'}
+      {status === 'withheld' && order.reviewModerationReason && ' Reason: ' + order.reviewModerationReason}
+    </p>
+    {status === 'published' && <a href="/reviews" className="mt-2 inline-block text-nhubx-glow-primary underline">See public reviews</a>}
+    {status === 'withheld' && <button type="button" className="mt-2 text-nhubx-glow-primary underline" onClick={() => setEditing(true)}>Submit a revised review</button>}
+  </div>;
   return (
-    <details className="mt-4 rounded-xl border border-white/10 p-4">
-      <summary className="cursor-pointer font-semibold">Leave a review</summary>
+    <details open={editing || undefined} className="mt-4 rounded-xl border border-white/10 p-4">
+      <summary className="cursor-pointer font-semibold">{editing ? 'Revise your review' : 'Leave a review'}</summary>
       <form className="mt-3 space-y-3" onSubmit={submit}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label>Rating<select className={orderField} name="rating" defaultValue="" required><option value="" disabled>Choose a rating</option>{[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} {rating === 1 ? 'star' : 'stars'}</option>)}</select></label>
@@ -36,6 +40,7 @@ export default function OrderReview({ order }) {
         <label className="flex gap-2 text-sm"><input type="checkbox" name="consent" required /> I agree to publish this review and my selected display name.</label>
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
         <button className={orderButton} disabled={busy}>{busy ? 'Submitting…' : 'Submit review'}</button>
+        {editing && <button type="button" disabled={busy} className="ml-3 text-sm text-gray-300" onClick={() => { setEditing(false); setError(''); }}>Cancel</button>}
       </form>
     </details>
   );

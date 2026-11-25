@@ -167,10 +167,25 @@ test('order transactions handle renewal retries, delivery feedback, private chat
   const collection = (path) => ({ doc: (name = "generated-public-id") => {
     const full = path + '/' + name;
     return { id: name, path: full, collection: (segment) => collection(full + '/' + segment) };
+  }, orderBy: (field, direction) => {
+    const sort = direction === 'asc' ? 1 : -1;
+    let cursor;
+    const query = {
+      startAfter(value) { cursor = value; return query; },
+      limit(size) {
+        const docs = [...records.entries()]
+          .filter(([key, item]) => key.startsWith(path + '/') && (cursor === undefined || (item[field] - cursor) * sort > 0))
+          .sort(([, a], [, b]) => (a[field] - b[field]) * sort)
+          .slice(0, size)
+          .map(([key, item]) => ({ id: key.split('/').at(-1), data: () => item }));
+        return { queryResult: { docs, size: docs.length } };
+      },
+    };
+    return query;
   } });
   const snapshot = (ref) => ({ id: ref.id, exists: records.has(ref.path), data: () => records.get(ref.path) });
   const db = { collection, runTransaction: (callback) => callback({
-    get: async (ref) => snapshot(ref),
+    get: async (ref) => ref.queryResult ?? snapshot(ref),
     getAll: async (...refs) => refs.map(snapshot),
     set: (ref, value) => records.set(ref.path, value),
     create: (ref, value) => records.set(ref.path, value),
@@ -220,6 +235,20 @@ test('order transactions handle renewal retries, delivery feedback, private chat
   assert.equal(records.get('orders/review/chat/' + message.operation).role, 'customer');
   assert.equal(records.get('orders/review').chat.adminUnread, 1);
   assert.equal(filterAdminOrders([records.get('orders/review')], '', 'unread').length, 1);
+  for (let sequence = 2; sequence <= 37; sequence++) {
+    records.set('orders/review/chat/message-' + sequence, { sequence, text: 'Stored message', role: 'customer' });
+  }
+  records.get('orders/review').chat = { sequence: 37, adminUnread: 37 };
+  const chat = { action: 'chatList', id: 'review', admin: true };
+  await assert.rejects(orderApi(db, outsider, chat), { code: 'permission-denied' });
+  const first = await orderApi(db, admin, { ...chat, after: 1 });
+  assert.deepEqual(first.messages.map((item) => item.sequence), Array.from({ length: 30 }, (_, i) => i + 2));
+  assert.equal(first.more, true);
+  assert.equal(records.get('orders/review').chat.adminUnread, 37);
+  const latest = await orderApi(db, admin, { ...chat, after: 31 });
+  assert.equal(latest.messages.at(-1).sequence, 37);
+  assert.equal(latest.more, false);
+  assert.equal(records.get('orders/review').chat.adminUnread, 0);
 
   const review = { action: 'submitReview', id: 'review', rating: 2, display: 'anonymous', consent: true, comment: 'The files were delivered but the timeline slipped.' };
   await assert.rejects(orderApi(db, outsider, review), { code: 'permission-denied' });
@@ -229,11 +258,17 @@ test('order transactions handle renewal retries, delivery feedback, private chat
   assert.equal(records.has('publishedOrderReviews/generated-public-id'), false);
   const publish = { action: 'moderateReview', id: 'review', status: 'published' };
   await assert.rejects(orderApi(db, customer, publish), { code: 'permission-denied' });
+  await orderApi(db, admin, { ...publish, status: 'withheld', reason: 'Personal information' });
+  assert.equal(records.get('orders/review').reviewStatus, 'withheld');
+  await orderApi(db, customer, { ...review, resubmit: true });
+  assert.equal(records.get('orders/review').reviewModerationReason, null);
+  await assert.rejects(orderApi(db, admin, { ...publish, createdAt: '2026-01-01T00:00:00.000Z' }), /review has changed/);
   await orderApi(db, admin, publish);
   await orderApi(db, admin, publish);
   const published = records.get('publishedOrderReviews/generated-public-id');
   assert.deepEqual(Object.keys(published).sort(), ['comment', 'displayName', 'publishedAt', 'rating']);
   assert.equal(published.rating, 2);
+  await assert.rejects(orderApi(db, customer, { ...review, resubmit: true }), /already been submitted/);
   assert.deepEqual(records.get('reviewMetadata/totals'), { count: 1, ratingSum: 2 });
 });
 

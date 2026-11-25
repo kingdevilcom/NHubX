@@ -12,7 +12,7 @@ export default function AdminOrders() {
   const enquiryId = params.get('enquiry') || '';
   const [orders, setOrders] = useState([]);
   const markChatRead = useCallback((id) => {
-    setSelectedId((current) => current || id);
+    setSelectedId(id);
     setOrders((current) => current.map((order) =>
       order.id === id && order.chat?.adminUnread ? { ...order, chat: { ...order.chat, adminUnread: 0 } } : order));
   }, []);
