@@ -242,6 +242,13 @@ test('reviews page explains when there are no verified reviews', async ({ page }
   await expect(page.getByText('No verified customer reviews have been published yet.')).toBeVisible();
 });
 
+test('homepage formats a perfect average without a trailing decimal', async ({ page }) => {
+  const reviews = [24, 25].map((day) => ({ rating: 5, comment: 'Test review', displayName: 'Verified customer', publishedAt: '2026-11-' + day + 'T08:00:00.000Z' }));
+  await page.route('**/api/reviews*', (route) => route.fulfill({ json: { average: 5, count: 2, reviews, next: null } }));
+  await page.goto('/');
+  await expect(page.getByRole('region', { name: 'Customer reviews' }).getByText('5/5 from 2 verified reviews')).toBeVisible();
+});
+
 test('home shows three verified reviews and links to the full reviews page', async ({ page }) => {
   const longerComment = 'Review example 4. ' + 'The website worked well and the updates were clear. '.repeat(3) + 'This final sentence appears after expanding.';
   const reviews = Array.from({ length: 4 }, (_, index) => ({
@@ -257,7 +264,7 @@ test('home shows three verified reviews and links to the full reviews page', asy
   await page.goto('/');
   const preview = page.getByRole('region', { name: 'Customer reviews' });
   await expect(preview.getByRole('article')).toHaveCount(3, { timeout: 15_000 });
-  await expect(preview.getByText('across 4 verified reviews')).toBeVisible();
+  await expect(preview.getByText('from 4 verified reviews')).toBeVisible();
   await expect(preview.getByRole('img', { name: '3.5 out of 5 stars' })).toBeVisible();
   await preview.getByRole('link', { name: 'View all reviews' }).click();
   await expect(page).toHaveURL(/\/reviews$/);

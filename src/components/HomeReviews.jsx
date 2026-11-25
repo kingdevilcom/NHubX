@@ -7,6 +7,7 @@ import ReviewStars from './ReviewStars';
 export default function HomeReviews() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(false);
+  const score = result?.count > 0 ? Number(result.average.toFixed(1)) : null;
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/reviews?limit=3', { signal: controller.signal }).then((response) => {
@@ -21,9 +22,9 @@ export default function HomeReviews() {
       <div className="flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-8">
         <div>
           <h2 id="home-reviews" className="text-2xl font-bold tracking-tight sm:text-3xl">Customer reviews</h2>
-          {result?.count > 0 && <div className="mt-2 flex flex-wrap items-center gap-2.5">
-            <ReviewStars rating={Number(result.average.toFixed(1))} />
-            <p className="text-sm text-gray-300"><strong className="text-white">{result.average.toFixed(1)}/5</strong> across {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</p>
+          {score !== null && <div className="mt-2 flex flex-wrap items-center gap-2.5">
+            <ReviewStars rating={score} />
+            <p className="text-sm text-gray-300"><strong className="text-white">{score}/5</strong> from {result.count} verified {result.count === 1 ? 'review' : 'reviews'}</p>
           </div>}
         </div>
         <Link to="/reviews" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-nhubx-glow-primary hover:bg-white/5">
