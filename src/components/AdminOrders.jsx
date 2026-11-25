@@ -1,15 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { RefreshCw, Search } from 'lucide-react';
 import { formatLkr, orderButton, orderField, orderRequest, stages } from '../orders';
 import { filterAdminOrders, hasPendingRevision, upcomingRenewals } from '../orderWorkspace';
 import OrderSummary from './OrderSummary';
+import OrderChat from './OrderChat';
 import OrderEmailPanel from './OrderEmailPanel';
 
 export default function AdminOrders() {
   const [params, setParams] = useSearchParams();
   const enquiryId = params.get('enquiry') || '';
   const [orders, setOrders] = useState([]);
+  const markChatRead = useCallback((id) => {
+    setSelectedId((current) => current || id);
+    setOrders((current) => current.map((order) =>
+      order.id === id && order.chat?.adminUnread ? { ...order, chat: { ...order.chat, adminUnread: 0 } } : order));
+  }, []);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
@@ -62,7 +68,7 @@ export default function AdminOrders() {
 
   const renewals = upcomingRenewals(orders);
   const visible = filterAdminOrders(orders, search, stage);
-  const selected = visible.find((order) => order.id === selectedId) ?? visible[0];
+  const selected = (stage === 'unread' ? orders : visible).find((order) => order.id === selectedId) ?? visible[0];
   const order = selected;
   const stats = [
     ['Open orders', orders.filter((order) => order.stage !== 'Delivered').length],
@@ -102,19 +108,20 @@ export default function AdminOrders() {
           <div className="flex items-center justify-between gap-3"><h2 className="font-bold">Order list</h2><button type="button" aria-label="Refresh orders" disabled={loading || busy} onClick={loadOrders} className="rounded-lg border border-white/15 p-2 text-gray-300 disabled:opacity-50"><RefreshCw size={16} /></button></div>
           <div className="mt-3 grid gap-2">
             <label className="relative"><span className="sr-only">Search orders</span><Search size={16} aria-hidden="true" className="absolute left-2.5 top-2.5 text-gray-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, invoice or customer" className={orderField + ' pl-8'} /></label>
-            <label><span className="sr-only">Filter orders by stage</span><select value={stage} onChange={(event) => setStage(event.target.value)} className={orderField}><option value="">All stages</option><option value="revision">Changes requested</option>{stages.map((item) => <option key={item}>{item}</option>)}</select></label>
+            <label><span className="sr-only">Filter orders by stage</span><select value={stage} onChange={(event) => setStage(event.target.value)} className={orderField}><option value="">All stages</option><option value="unread">Unread messages</option><option value="revision">Changes requested</option>{stages.map((item) => <option key={item}>{item}</option>)}</select></label>
           </div>
           {loadError && <p role="alert" className="mt-3 text-sm text-red-300">{loadError}</p>}
           {loading && <p role="status" className="mt-3 text-sm text-gray-400">Loading orders…</p>}
           {!loading && !loadError && !visible.length && <p className="mt-3 text-sm text-gray-400">{orders.length ? 'No orders match these filters.' : 'No orders yet. Create a quote to start.'}</p>}
           {visible.length > 0 && <ul className="mt-3 max-h-[34rem] space-y-1 overflow-y-auto pr-1">
-            {visible.map((order) => <li key={order.id}><button type="button" aria-current={selected?.id === order.id ? 'true' : undefined} onClick={() => selectOrder(order.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === order.id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10' : 'border-transparent hover:bg-white/5'}`}><strong className="block truncate text-sm">{order.title}</strong><span className="mt-1 block truncate text-xs text-gray-400">{order.orderNumber && order.orderNumber + ' · '}{order.customerName} · {hasPendingRevision(order) ? 'Changes requested' : order.stage}</span></button></li>)}
+            {visible.map((order) => <li key={order.id}><button type="button" aria-current={selected?.id === order.id ? 'true' : undefined} onClick={() => selectOrder(order.id)} className={`w-full rounded-lg border p-3 text-left ${selected?.id === order.id ? 'border-nhubx-glow-primary/35 bg-nhubx-glow-primary/10' : 'border-transparent hover:bg-white/5'}`}><strong className="block truncate text-sm">{order.title}</strong><span className="mt-1 block truncate text-xs text-gray-400">{order.orderNumber && order.orderNumber + ' · '}{order.customerName} · {hasPendingRevision(order) ? 'Changes requested' : order.stage}</span>{order.chat?.adminUnread > 0 && <span className="mt-1 block text-xs text-orange-300">{order.chat.adminUnread} unread</span>}</button></li>)}
           </ul>}
         </section>
         <div ref={detail} className="min-w-0 scroll-mt-4">
         {order && (
         <article key={order.id} className="rounded-xl border border-white/10 bg-[#19191b] p-5">
           <OrderSummary order={order} />
+          <OrderChat order={order} admin onRead={markChatRead} />
           <p className="mt-3 break-all text-sm text-gray-400">{order.customerName} · {order.customerEmail}</p>
           {order.revisionRequest && <section aria-label="Review feedback" className="mt-4 rounded-xl border border-nhubx-glow-primary/30 bg-nhubx-glow-primary/5 p-4">
             <h3 className="font-bold">{hasPendingRevision(order) ? 'Changes requested' : 'Latest review feedback'}</h3>

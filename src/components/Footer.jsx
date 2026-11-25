@@ -1,3 +1,4 @@
+import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import {
@@ -38,6 +39,7 @@ const Footer = () => {
               <p className="text-sm text-gray-500">
                 Modern Digital Infrastructure
               </p>
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-400"><MapPin size={13} aria-hidden="true" /> Matara, Sri Lanka</p>
             </div>
           </Link>
 
@@ -143,7 +145,8 @@ const Footer = () => {
             • NHubX
           </p>
 
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link to="/reviews" className="text-gray-600 hover:text-white transition">Reviews</Link>
             <Link to="/orders" className="text-gray-600 hover:text-white transition">My orders</Link>
 
             <Link

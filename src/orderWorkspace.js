@@ -25,7 +25,7 @@ export const needsCustomerAction = (order) => ['Quote sent', 'Review'].includes(
 export function filterAdminOrders(orders, search, stage) {
   const term = search.trim().toLowerCase();
   const billingSequence = /^(?:inv|ren|rct)-(\d+)(?:-|$)/.exec(term)?.[1];
-  return orders.filter((order) => (!stage || (stage === 'revision' ? hasPendingRevision(order) : stage === order.stage))
+  return orders.filter((order) => (!stage || (stage === 'revision' ? hasPendingRevision(order) : stage === 'unread' ? order.chat?.adminUnread > 0 : stage === order.stage))
     && (!term || (billingSequence && order.orderNumber === 'NHX-' + billingSequence.padStart(5, '0'))
       || [order.orderNumber, order.title, order.customerName, order.customerEmail, order.id].some((value) => value?.toLowerCase().includes(term))));
 }

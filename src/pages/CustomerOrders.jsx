@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import { Package, RefreshCw } from 'lucide-react';
@@ -6,6 +6,8 @@ import { app } from '../firebase';
 import { formatLkr, orderButton, orderRequest } from '../orders';
 import { hasPendingRevision, needsCustomerAction, nextOrderActions, upcomingRenewals } from '../orderWorkspace';
 import OrderSummary from '../components/OrderSummary';
+import OrderChat from '../components/OrderChat';
+import OrderReview from '../components/OrderReview';
 
 const auth = getAuth(app);
 const filters = [['all', 'All orders'], ['action', 'Needs my action'], ['active', 'Active'], ['delivered', 'Delivered']];
@@ -13,6 +15,10 @@ const filters = [['all', 'All orders'], ['action', 'Needs my action'], ['active'
 export default function CustomerOrders() {
   const [user, setUser] = useState(undefined);
   const [result, setResult] = useState(null);
+  const markChatRead = useCallback((id) => setResult((current) => current && ({
+    ...current,
+    orders: current.orders.map((order) => order.id === id ? { ...order, unreadMessages: 0 } : order),
+  })), []);
   const orders = user?.uid === result?.uid ? (result?.orders ?? []) : [];
   const [pending, setPending] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -105,6 +111,8 @@ export default function CustomerOrders() {
           </form>}
           {order.revisionRequest && <details className="mb-4 rounded-xl border border-white/10 p-4 text-sm"><summary className="cursor-pointer font-semibold">Latest review feedback</summary><p className="mt-2 whitespace-pre-wrap break-words text-gray-300">{order.revisionRequest.message}</p>{order.revisionRequest.response && <p className="mt-3 whitespace-pre-wrap break-words text-gray-400">NHubX: {order.revisionRequest.response}</p>}</details>}
           <OrderSummary order={order} showProgress />
+          <OrderChat order={order} onRead={markChatRead} />
+          <OrderReview order={order} />
         </article>
       ))}
     </section>

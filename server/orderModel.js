@@ -13,5 +13,5 @@ export function reminderDays(dueDate, today) {
 
 export function customerOrder(order) {
   const { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt, orderNumber, revisionRequest } = order;
-  return { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt, orderNumber, revisionRequest };
+  return { title, scope, total, deposit, paid, stage, dueDate, deliveryUrl, services, receipts, timeline, customerName, createdAt, orderNumber, revisionRequest, unreadMessages: order.chat?.customerUnread ?? 0, reviewStatus: order.reviewStatus, reviewModerationReason: order.reviewModerationReason };
 }

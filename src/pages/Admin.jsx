@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowUpRight, BarChart3, Layers, Loader2, LogOut, Mail, Package, RefreshCw, Settings } from 'lucide-react';
+import { ArrowUpRight, BarChart3, Layers, Loader2, LogOut, Mail, Package, RefreshCw, Settings, Star } from 'lucide-react';
 import { AdminProvider, useAdmin } from '../context/AdminContext';
 import AdminLogin from '../components/AdminLogin';
 import AdminAnalytics from '../components/AdminAnalytics';
@@ -8,10 +8,12 @@ import AdminProjectManager from '../components/AdminProjectManager';
 import AdminContentEditor from '../components/AdminContentEditor';
 import AdminMessages from '../components/AdminMessages';
 import AdminOrders from '../components/AdminOrders';
+import AdminReviews from '../components/AdminReviews';
 import { fetchProjects } from '../firebase';
 
 const sections = [
   { id: 'orders', label: 'Orders', description: 'Manage quotes, delivery, payments and renewals.', icon: Package },
+  { id: 'reviews', label: 'Reviews', description: 'Moderate reviews from customers with delivered orders.', icon: Star },
   { id: 'messages', label: 'Enquiries', description: 'Review incoming messages and turn enquiries into quotes.', icon: Mail },
   { id: 'analytics', label: 'Analytics', description: 'Track website traffic and where leads come from.', icon: BarChart3 },
   { id: 'projects', label: 'Projects', description: 'Manage the public project portfolio.', icon: Layers },
@@ -82,6 +84,7 @@ function Admin() {
           </header>
           {error && <p className="mb-4 text-sm text-red-300" role="alert">{error}</p>}
           {section.id === 'orders' && <AdminOrders />}
+          {section.id === 'reviews' && <AdminReviews />}
           {section.id === 'messages' && <AdminMessages />}
           {section.id === 'analytics' && <AdminAnalytics />}
           {section.id === 'projects' && <AdminProjects />}

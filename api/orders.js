@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     try { user = await client.auth.verifyIdToken(match[1], true); }
     catch { return res.status(401).json({ error: 'Please sign in again.' }); }
     const result = await orderApi(client.db, user, req.body);
-    if (!['list', 'emailHistory', 'checkEmail', 'requestChanges'].includes(req.body?.action)) {
+    if (!['list', 'emailHistory', 'checkEmail', 'requestChanges', 'chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview'].includes(req.body?.action)) {
       await flushOrderJobs(client.db, 2, result.emailId).catch(() => console.error('Order notifications remain queued.'));
     }
     return res.status(200).json({ result });

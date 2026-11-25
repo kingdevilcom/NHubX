@@ -1,14 +1,11 @@
 import { createHash } from 'node:crypto';
+import { OrderError } from './orderError.js';
+import { orderConversation } from './orderConversation.js';
 import { orderEmailHistory, refreshOrderEmail } from './orderJobs.js';
 import { customerOrder, nextAnnualDate, orderStages, reminderDays, serviceTypes } from './orderModel.js';
 import { allocateOrderNumber, assignMissingOrderNumbers, orderCounter } from './orderNumbers.js';
 
-export class OrderError extends Error {
-  constructor(code, message) {
-    super(message);
-    this.code = code;
-  }
-}
+export { OrderError } from './orderError.js';
 
 const timezone = 'Asia/Colombo';
 const todayInColombo = () => new Intl.DateTimeFormat('sv-SE', { timeZone: timezone }).format(new Date());
@@ -51,6 +48,9 @@ export async function orderApi(db, auth, data) {
   const admin = email === 'stharunindu@gmail.com';
   const input = data && typeof data === 'object' ? data : {};
   const { action } = input;
+  if (['chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview'].includes(action)) {
+    return orderConversation(db, auth, admin, input);
+  }
 
   if (action === 'emailHistory' || action === 'checkEmail') {
     if (!admin) throw new OrderError('permission-denied', 'Admin access required.');

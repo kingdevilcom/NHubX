@@ -178,3 +178,10 @@ test('admin sign-in preserves a quote creation deep link', async ({ page }) => {
   await expect(page).toHaveURL(/\?tab=orders&enquiry=example$/);
   await expect(page.getByRole('button', { name: 'Create and send quote' })).toHaveCount(0);
 });
+
+test('reviews page explains when there are no verified reviews', async ({ page }) => {
+  await page.route('**/api/reviews', (route) => route.fulfill({ json: { count: 0, average: null, reviews: [], next: null } }));
+  await page.goto('/reviews');
+  await expect(page.getByRole('heading', { name: 'Customer reviews' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('No verified customer reviews have been published yet.')).toBeVisible();
+});

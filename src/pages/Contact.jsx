@@ -5,7 +5,7 @@ import Card from '../components/Card';
 import {
   Lock,
   Mail,
-  ShieldCheck,
+  MapPin,
   CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
@@ -262,19 +262,19 @@ const Contact = () => {
 
           <div className="glass bg-white/[0.01] border border-white/[0.06] rounded-xl p-4 flex items-center gap-3 justify-center sm:justify-start">
 
-            <ShieldCheck
+            <MapPin
               size={16}
-              className="text-green-500 animate-pulse"
+              className="text-nhubx-glow-primary"
             />
 
             <div>
 
               <p className="text-[10px] text-gray-600 uppercase tracking-wider">
-                Security
+                Based in
               </p>
 
-              <p className="text-green-400 font-semibold mt-0.5">
-                Secure Connection Active
+              <p className="text-gray-400 font-semibold mt-0.5">
+                Matara, Sri Lanka
               </p>
 
             </div>

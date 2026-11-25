@@ -23,6 +23,7 @@ import ScrollToTop from './components/ScrollToTop';
 
 import Home from './pages/Home';
 const About = lazy(() => import('./pages/About.jsx'));
+const Reviews = lazy(() => import('./pages/Reviews.jsx'));
 const CustomerOrders = lazy(() => import('./pages/CustomerOrders.jsx'));
 const ServiceBusinessWebsites = lazy(() => import('./pages/ServiceBusinessWebsites.jsx'));
 const Projects = lazy(() => import('./pages/Projects.jsx'));
@@ -85,6 +86,7 @@ const AnimatedRoutes = ({ startupComplete }) => {
         />
 
         <Route path="/websites-for-service-businesses" element={<PageWrapper><ServiceBusinessWebsites /></PageWrapper>} />
+        <Route path="/reviews" element={<PageWrapper><Reviews /></PageWrapper>} />
         <Route path="/orders" element={<PageWrapper><CustomerOrders /></PageWrapper>} />
 
         <Route

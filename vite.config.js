@@ -15,6 +15,7 @@ export default defineConfig({
         '/websites-for-service-businesses',
         '/projects',
         '/pricing',
+        '/reviews',
         '/developer',
         '/contact',
         '/privacy-policy',

@@ -1,0 +1,121 @@
+import { OrderError } from './orderError.js';
+
+const invalid = (message) => { throw new OrderError('invalid-argument', message); };
+const deny = () => { throw new OrderError('permission-denied', 'This action is not available to your account.'); };
+export const moderationReasons = ['Spam', 'Abuse', 'Personal information', 'Unrelated to the order'];
+
+export function canViewOrder(order, auth, admin) {
+  return admin || (order.customerEmail === auth.email?.toLowerCase() && (!order.ownerUid || order.ownerUid === auth.uid));
+}
+
+export function publicReview(review) {
+  const { displayName, rating, comment, publishedAt } = review;
+  return { displayName, rating, comment, publishedAt };
+}
+
+function validatedText(value, max, message) {
+  if (typeof value !== 'string' || !value.trim() || value.length > max) invalid(message);
+  return value.trim();
+}
+
+export async function orderConversation(db, auth, admin, input) {
+  const { action } = input;
+  if (action === 'reviewQueue') {
+    if (!admin) deny();
+    const pending = await db.collection('orderReviews').where('status', '==', 'pending').limit(50).get();
+    return pending.docs.map((snapshot) => {
+      const { displayName, rating, comment, createdAt, orderNumber } = snapshot.data();
+      return { id: snapshot.id, displayName, rating, comment, createdAt, orderNumber };
+    }).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+  if (typeof input.id !== 'string' || !/^[\w-]{1,110}$/.test(input.id)) invalid('Invalid order ID.');
+  const ref = db.collection('orders').doc(input.id);
+  const reviewRef = db.collection('orderReviews').doc(input.id);
+  const messages = ref.collection('chat');
+  const role = admin && input.admin === true ? 'admin' : 'customer';
+  const access = (order) => {
+    if (!order) throw new OrderError('not-found', 'Order not found.');
+    if (!canViewOrder(order, auth, role === 'admin')) deny();
+  };
+  const assertOwner = (order) => {
+    access(order);
+    if (!canViewOrder(order, auth, false)) deny();
+  };
+  if (action === 'moderateReview') {
+    if (!admin) deny();
+    if (!['published', 'withheld'].includes(input.status)) invalid('Choose a moderation action.');
+    if (input.status === 'withheld' && !moderationReasons.includes(input.reason)) invalid('Choose a moderation reason.');
+    const totals = db.collection('reviewMetadata').doc('totals');
+    return db.runTransaction(async (tx) => {
+      const [orderSnapshot, reviewSnapshot] = await tx.getAll(ref, reviewRef);
+      const order = orderSnapshot.data();
+      const review = reviewSnapshot.data();
+      if (!order || !review) throw new OrderError('not-found', 'Review not found.');
+      if (review.status === input.status) return { status: review.status };
+      if (review.status !== 'pending') invalid('This review has already been moderated.');
+      const publishedAt = input.status === 'published' ? new Date().toISOString() : null;
+      const reason = input.status === 'withheld' ? input.reason : null;
+      if (publishedAt) {
+        const existing = (await tx.get(totals)).data();
+        tx.set(totals, { count: (existing?.count ?? 0) + 1, ratingSum: (existing?.ratingSum ?? 0) + review.rating });
+        tx.create(db.collection('publishedOrderReviews').doc(), publicReview({ ...review, publishedAt }));
+      }
+      tx.update(reviewRef, { status: input.status, publishedAt, reason });
+      tx.update(ref, { reviewStatus: input.status, reviewModerationReason: reason });
+      return { status: input.status };
+    });
+  }
+  if (action === 'submitReview') {
+    const comment = validatedText(input.comment, 1000, 'Write a review of up to 1,000 characters.');
+    if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(comment)) invalid('Remove email addresses before submitting a public review.');
+    if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5 || input.consent !== true || !['anonymous', 'firstName'].includes(input.display)) invalid('Choose a rating, display name, and consent to publish.');
+    return db.runTransaction(async (tx) => {
+      const [orderSnapshot, reviewSnapshot] = await tx.getAll(ref, reviewRef);
+      const order = orderSnapshot.data();
+      assertOwner(order);
+      if (order.stage !== 'Delivered') invalid('Reviews are available after delivery.');
+      if (reviewSnapshot.exists) invalid('A review has already been submitted for this order.');
+      const firstName = typeof order.customerName === 'string' ? order.customerName.trim().split(/\s+/)[0] : '';
+      const displayName = input.display === 'firstName' && firstName && !firstName.includes('@') ? firstName : 'Verified customer';
+      tx.create(reviewRef, { rating: input.rating, comment, displayName, status: 'pending', createdAt: new Date().toISOString(), orderNumber: order.orderNumber ?? null });
+      tx.update(ref, { reviewStatus: 'pending', ownerUid: auth.uid });
+      return { status: 'pending' };
+    });
+  }
+  if (action === 'chatList') {
+    return db.runTransaction(async (tx) => {
+      const order = (await tx.get(ref)).data();
+      access(order);
+      const older = Number.isSafeInteger(input.before) && input.before > 0;
+      let query = messages.orderBy('sequence', 'desc');
+      if (older) query = query.startAfter(input.before);
+      const page = await tx.get(query.limit(31));
+      const shown = page.docs.slice(0, 30).map((item) => ({ id: item.id, ...item.data() }));
+      const unread = role === 'admin' ? 'adminUnread' : 'customerUnread';
+      if (!older && order.chat?.[unread]) tx.update(ref, { chat: { ...order.chat, [unread]: 0 } });
+      return { messages: shown.reverse(), older: page.size > 30 };
+    });
+  }
+  if (action === 'chatSend') {
+    const message = validatedText(input.message, 2000, 'Enter a message of up to 2,000 characters.');
+    if (typeof input.operation !== 'string' || !/^[a-f0-9-]{36}$/i.test(input.operation)) invalid('Invalid message ID.');
+    const item = messages.doc(input.operation);
+    return db.runTransaction(async (tx) => {
+      const [orderSnapshot, existing] = await tx.getAll(ref, item);
+      const order = orderSnapshot.data();
+      access(order);
+      if (existing.exists) {
+        if (existing.data().role !== role) deny();
+        return { id: existing.id };
+      }
+      const chat = order.chat ?? {};
+      const sequence = (chat.sequence ?? 0) + 1;
+      const unread = role === 'admin' ? 'customerUnread' : 'adminUnread';
+      const createdAt = new Date().toISOString();
+      tx.create(item, { role, text: message, sequence, createdAt });
+      tx.update(ref, { chat: { ...chat, sequence, [unread]: (chat[unread] ?? 0) + 1 }, ...(role === 'customer' ? { ownerUid: auth.uid } : {}) });
+      return { id: item.id };
+    });
+  }
+  invalid('Unknown action.');
+}

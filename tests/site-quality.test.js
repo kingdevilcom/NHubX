@@ -158,18 +158,20 @@ test('renewal dates and customer projections keep private order fields out', () 
   assert.equal('arbitraryInternalField' in visible, false);
 });
 
-test('annual renewal advances once even when the payment request is retried', async () => {
+test('order transactions handle renewal retries, delivery feedback, private chat and verified reviews', async () => {
   const id = 'abc';
   const records = new Map([['orders/' + id, {
     customerEmail: 'customer@example.com', stage: 'Delivered', timeline: [], receipts: [],
     services: [{ id: 'hosting', type: 'Hosting', dueDate: '2027-04-01', amount: 499 }],
   }]]);
-  const collection = (path) => ({ doc: (name) => {
+  const collection = (path) => ({ doc: (name = "generated-public-id") => {
     const full = path + '/' + name;
     return { id: name, path: full, collection: (segment) => collection(full + '/' + segment) };
   } });
+  const snapshot = (ref) => ({ id: ref.id, exists: records.has(ref.path), data: () => records.get(ref.path) });
   const db = { collection, runTransaction: (callback) => callback({
-    get: async (ref) => ({ exists: records.has(ref.path), data: () => records.get(ref.path) }),
+    get: async (ref) => snapshot(ref),
+    getAll: async (...refs) => refs.map(snapshot),
     set: (ref, value) => records.set(ref.path, value),
     create: (ref, value) => records.set(ref.path, value),
     update: (ref, value) => records.set(ref.path, { ...records.get(ref.path), ...value }),
@@ -209,6 +211,30 @@ test('annual renewal advances once even when the payment request is retried', as
   assert.equal(records.get('orderEmails/review-' + update.operation).pending, true);
   await orderApi(db, customer, approval);
   assert.equal(records.get('orders/review').stage, 'Delivered');
+
+  const outsider = { ...customer, uid: 'wrong-user' };
+  const message = { ...feedback, action: 'chatSend', admin: true };
+  await assert.rejects(orderApi(db, outsider, message), { code: 'permission-denied' });
+  await orderApi(db, customer, message);
+  await orderApi(db, customer, message);
+  assert.equal(records.get('orders/review/chat/' + message.operation).role, 'customer');
+  assert.equal(records.get('orders/review').chat.adminUnread, 1);
+  assert.equal(filterAdminOrders([records.get('orders/review')], '', 'unread').length, 1);
+
+  const review = { action: 'submitReview', id: 'review', rating: 2, display: 'anonymous', consent: true, comment: 'The files were delivered but the timeline slipped.' };
+  await assert.rejects(orderApi(db, outsider, review), { code: 'permission-denied' });
+  await assert.rejects(orderApi(db, customer, { ...review, consent: false }), { code: 'invalid-argument' });
+  await orderApi(db, customer, review);
+  await assert.rejects(orderApi(db, customer, review), /already been submitted/);
+  assert.equal(records.has('publishedOrderReviews/generated-public-id'), false);
+  const publish = { action: 'moderateReview', id: 'review', status: 'published' };
+  await assert.rejects(orderApi(db, customer, publish), { code: 'permission-denied' });
+  await orderApi(db, admin, publish);
+  await orderApi(db, admin, publish);
+  const published = records.get('publishedOrderReviews/generated-public-id');
+  assert.deepEqual(Object.keys(published).sort(), ['comment', 'displayName', 'publishedAt', 'rating']);
+  assert.equal(published.rating, 2);
+  assert.deepEqual(records.get('reviewMetadata/totals'), { count: 1, ratingSum: 2 });
 });
 
 test('order emails distinguish provider acceptance from delivery and expose no message body', () => {
