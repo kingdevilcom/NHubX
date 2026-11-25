@@ -292,11 +292,12 @@ test('custom domain email is admin-only, validates recipients, and reuses the sa
   const deps = { env, request };
   const draft = { action: 'adminEmailSend', to: 'recipient@example.com', subject: 'Hello', message: '<script>example</script>\nSecond line', operation: '12345678-1234-1234-1234-123456789abc' };
   await assert.rejects(orderApi({ collection: () => ({}) }, { email: 'customer@example.com', email_verified: true }, draft), { code: 'permission-denied' });
-  await assert.rejects(adminEmail(true, { ...draft, to: 'a@example.com,b@example.com' }, deps), { code: 'invalid-argument' });
+  await assert.rejects(adminEmail(true, { ...draft, to: 'a@example.com,invalid address' }, deps), { code: 'invalid-argument' });
   assert.equal(requests.length, 0);
   assert.deepEqual(await adminEmail(true, { action: 'adminEmailConfig' }, deps), {
     configured: true, from: env.ADMIN_EMAIL_FROM, senderAddress: 'hello@email.nhubx.com', senderDomain: 'email.nhubx.com', replyTo: env.ADMIN_EMAIL_REPLY_TO,
     founder: { address: 'founder@email.nhubx.com', name: 'Founder | NHubX' },
+    recipientLimit: 25,
   });
   assert.deepEqual(await adminEmail(true, draft, deps), { id: 'provider-id', to: draft.to });
   await adminEmail(true, draft, deps);
@@ -317,6 +318,24 @@ test('custom domain email is admin-only, validates recipients, and reuses the sa
   await adminEmail(true, { ...draft, from: 'founder@email.nhubx.com', operation: '32345678-1234-1234-1234-123456789abc' }, deps);
   assert.equal(requests[3].body.from, 'Founder | NHubX <founder@email.nhubx.com>');
   await assert.rejects(adminEmail(true, draft, { ...deps, request: async () => ({ ok: false, status: 403 }) }), /verified domain/);
+});
+
+test('admin batch emails deduplicate recipients and send a private copy to each person', async () => {
+  const requests = [];
+  const request = async (path, options) => {
+    requests.push({ path, ...options, body: JSON.parse(options.body) });
+    return { ok: true, json: async () => ({ data: [{ id: 'one' }, { id: 'two' }] }) };
+  };
+  const deps = { env: { RESEND_API_KEY: 'test-key' }, request };
+  const draft = { action: 'adminEmailSend', to: 'a@example.com, b@example.com\nA@example.com', subject: 'Hello', message: 'Update', operation: '42345678-1234-1234-1234-123456789abc' };
+  await assert.rejects(adminEmail(true, { ...draft, to: Array.from({ length: 26 }, (_, i) => i + '@example.com').join(',') }, deps), /up to 25/);
+  assert.equal(requests.length, 0);
+  assert.deepEqual(await adminEmail(true, draft, deps), { recipientCount: 2 });
+  await adminEmail(true, draft, deps);
+  assert.deepEqual(requests[1], requests[0]);
+  assert.equal(requests[0].path, 'emails/batch');
+  assert.deepEqual(requests[0].body.map((email) => email.to.map((address) => address.toLowerCase())), [['a@example.com'], ['b@example.com']]);
+  assert.ok(requests[0].body.every((email) => email.subject === 'Hello' && !email.cc && !email.bcc));
 });
 
 test('billing records show the correct amounts and escape customer and project text', () => {

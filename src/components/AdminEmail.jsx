@@ -7,7 +7,7 @@ export default function AdminEmail() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [sentTo, setSentTo] = useState('');
+  const [success, setSuccess] = useState('');
   const attempt = useRef(null);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function AdminEmail() {
     const draft = Object.fromEntries(['from', 'to', 'subject', 'message'].map((field) => [field, values.get(field).trim()]));
     const fingerprint = JSON.stringify(draft);
     setError('');
-    setSentTo('');
+    setSuccess('');
     if (attempt.current?.fingerprint !== fingerprint) {
       attempt.current = { fingerprint, operation: crypto.randomUUID(), startedAt: Date.now() };
     }
@@ -45,7 +45,9 @@ export default function AdminEmail() {
       const receipt = await orderRequest('adminEmailSend', { ...draft, operation: attempt.current.operation });
       form.reset();
       attempt.current = null;
-      setSentTo(receipt.to);
+      setSuccess(receipt.recipientCount
+        ? 'Resend accepted separate emails for ' + receipt.recipientCount + ' recipients.'
+        : 'Resend accepted the email to ' + receipt.to + '.');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,13 +74,17 @@ export default function AdminEmail() {
             {settings?.configured && <p id="admin-email-domain" className="mt-1 text-xs text-gray-400">Use any address ending in @{settings.senderDomain}.{settings.replyTo && ' Replies go to ' + settings.replyTo + '.'}</p>}
             {settings?.founder && sender.trim().toLowerCase() === settings.founder.address && <p className="mt-1 text-sm text-gray-300">Recipients see <strong>{settings.founder.name}</strong>.</p>}
           </div>
-          <label className="block text-sm font-semibold">To<input type="email" name="to" maxLength={254} placeholder="name@example.com" required className={orderField + ' mt-1'} /></label>
+          <div>
+            <label htmlFor="admin-email-to" className="text-sm font-semibold">To</label>
+            <textarea id="admin-email-to" name="to" rows={3} maxLength={6500} placeholder="name@example.com" required aria-describedby="admin-email-recipients" autoCapitalize="none" spellCheck={false} className={orderField + ' mt-1'} />
+            <p id="admin-email-recipients" className="mt-1 text-xs text-gray-400">Separate addresses with commas or new lines. {settings?.recipientLimit && 'Up to ' + settings.recipientLimit + ' people per send.'} Each person gets a private copy.</p>
+          </div>
           <label className="block text-sm font-semibold">Subject<input name="subject" maxLength={150} required className={orderField + ' mt-1'} /></label>
           <label className="block text-sm font-semibold">Message<textarea name="message" rows={8} maxLength={10000} required className={orderField + ' mt-1'} /></label>
           <button className={orderButton}>{busy ? 'Sending…' : 'Send email'}</button>
         </fieldset>
       </form>
-      {sentTo && <p role="status" className="mt-4 break-words text-sm text-green-300">Resend accepted the email to {sentTo}.</p>}
+      {success && <p role="status" className="mt-4 break-words text-sm text-green-300">{success}</p>}
       {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
     </section>
   );
