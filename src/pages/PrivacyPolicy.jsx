@@ -25,7 +25,7 @@ const PrivacyPolicy = () => {
 
           </div>
 
-          <h1 className="site-title mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white mb-6">
 
             Privacy{' '}
 

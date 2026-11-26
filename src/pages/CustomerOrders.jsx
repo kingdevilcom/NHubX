@@ -86,7 +86,7 @@ export default function CustomerOrders() {
   return (
     <section className="mx-auto min-h-screen max-w-5xl px-5 pb-16 pt-28 sm:pt-32">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
-        <div><h1 className="site-title">My orders</h1><p className="mt-3 text-gray-300">Review quotes, track delivery, and manage annual renewals.</p></div>
+        <div><h1 className="text-4xl font-black tracking-tight">My orders</h1><p className="mt-2 text-gray-400">Review quotes, track delivery, and manage annual renewals.</p></div>
         {user && <div className="flex max-w-full flex-wrap items-center gap-2 text-sm"><span className="break-all text-gray-400">{user.email}</span><button type="button" aria-label="Refresh orders" disabled={loading || Boolean(pending)} onClick={() => { setError(''); setLoading(true); setRefreshCount((count) => count + 1); }} className="rounded-lg border border-white/15 p-2 disabled:opacity-50"><RefreshCw size={16} /></button><button disabled={Boolean(pending)} onClick={() => { setResult(null); setError(''); setNotice(''); setFilter('all'); setSearch(''); setFeedback(''); setFeedbackOrder(null); signOut(auth).catch((err) => setError(err.message)); }} className="rounded-lg border border-white/15 px-3 py-2 disabled:opacity-50">Sign out</button></div>}
       </header>
       {user === undefined && <p className="mt-5" role="status">Checking sign-in…</p>}

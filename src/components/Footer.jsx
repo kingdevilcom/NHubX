@@ -1,56 +1,173 @@
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { FaFacebookF, FaGithub, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 
-const groups = [
-  ['Explore', [['/projects', 'Projects'], ['/pricing', 'Pricing'], ['/reviews', 'Reviews'], ['/websites-for-service-businesses', 'Service business websites']]],
-  ['NHubX', [['/about', 'About'], ['/developer', 'Developer'], ['/contact', 'Contact'], ['/orders', 'My orders']]],
-];
+import {
+  FaGithub,
+  FaInstagram,
+  FaWhatsapp,
+  FaFacebookF,
+} from 'react-icons/fa';
 
-const socialLinks = [
-  [FaGithub, 'GitHub', 'https://github.com/NanoKillX'],
-  [FaInstagram, 'Instagram', 'https://www.instagram.com/nanokillx/'],
-  [FaFacebookF, 'Facebook', 'https://www.facebook.com/profile.php?id=61558472124147'],
-  [FaWhatsapp, 'WhatsApp', 'https://api.whatsapp.com/send/?phone=94740356525'],
-];
-
-export default function Footer() {
+const Footer = () => {
   return (
-    <footer className="mt-12 border-t border-white/10 bg-[#101012]">
-      <div className="site-container">
-        <div className="grid grid-cols-2 gap-x-5 gap-y-8 py-10 sm:grid-cols-[1.4fr_1fr_1fr] sm:py-12">
-          <div className="col-span-2 sm:col-span-1">
-            <Link to="/" className="inline-flex items-center gap-3 text-xl font-bold">
-              <img src="/nhubx-logo.png" alt="" width="42" height="42" className="rounded-xl" />
-              NHubX
-            </Link>
-            <p className="mt-3 text-sm text-gray-300">Custom websites and web applications.</p>
-            <p className="mt-2 flex items-center gap-1.5 text-sm text-gray-400"><MapPin size={15} aria-hidden="true" /> Matara, Sri Lanka</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {socialLinks.map(([Icon, label, href]) => (
-                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label + ' (opens in a new tab)'} className="grid size-11 place-items-center rounded-xl border border-white/10 text-gray-300 transition-colors hover:border-white/25 hover:bg-white/5 hover:text-white">
-                  <Icon size={16} aria-hidden="true" />
-                </a>
-              ))}
+    <footer className="w-[95%] sm:w-[92%] md:w-[90%] max-w-7xl mx-auto mt-20 mb-8 px-6 md:px-10 py-8 rounded-[28px] border border-white/[0.06] bg-black/50 backdrop-blur-2xl relative overflow-hidden">
+
+      {/* glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[180px] bg-nhubx-glow-primary/[0.04] blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="relative z-10 flex flex-col gap-8">
+
+        {/* top */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+
+          {/* logo */}
+          <Link
+            to="/"
+            className="flex items-center gap-4"
+          >
+            <img
+              src="/nhubx-logo.png"
+              alt="NHubX Logo"
+              className="w-12 h-12 rounded-2xl border border-white/10"
+            />
+
+            <div>
+              <h2 className="text-xl font-bold text-white">
+                NHubX
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Modern Digital Infrastructure
+              </p>
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-400"><MapPin size={13} aria-hidden="true" /> Matara, Sri Lanka</p>
             </div>
+          </Link>
+
+          {/* nav */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+
+            <Link
+              to="/"
+              className="text-gray-500 hover:text-white transition"
+            >
+              Home
+            </Link>
+
+            <Link
+              to="/about"
+              className="text-gray-500 hover:text-white transition"
+            >
+              About
+            </Link>
+
+            <Link
+              to="/projects"
+              className="text-gray-500 hover:text-white transition"
+            >
+              Projects
+            </Link>
+
+            <Link
+              to="/developer"
+              className="text-gray-500 hover:text-white transition"
+            >
+              Developer
+            </Link>
+
+            <Link
+              to="/pricing"
+              className="text-gray-500 hover:text-white transition"
+            >
+              Pricing
+            </Link>
+
+            <Link
+              to="/contact"
+              className="text-gray-500 hover:text-white transition"
+            >
+              Contact
+            </Link>
           </div>
-          {groups.map(([label, links]) => (
-            <nav key={label} aria-label={label}>
-              <p className="font-semibold text-white">{label}</p>
-              <ul className="mt-2 space-y-1">
-                {links.map(([path, name]) => <li key={path}><Link to={path} className="inline-block py-1 text-sm text-gray-300 hover:text-white hover:underline">{name}</Link></li>)}
-              </ul>
-            </nav>
-          ))}
+
+          {/* socials */}
+          <div className="flex items-center gap-3">
+
+            <a
+              href="https://github.com/NanoKillX"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center text-gray-500 hover:text-white hover:border-white/20 transition"
+            >
+              <FaGithub size={16} />
+            </a>
+
+            <a
+              href="https://www.instagram.com/nanokillx/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center text-gray-500 hover:text-pink-400 hover:border-pink-400/20 transition"
+            >
+              <FaInstagram size={16} />
+            </a>
+
+            <a
+              href="https://www.facebook.com/profile.php?id=61558472124147"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center text-gray-500 hover:text-blue-400 hover:border-blue-400/20 transition"
+            >
+              <FaFacebookF size={16} />
+            </a>
+
+            <a
+              href="https://api.whatsapp.com/send/?phone=94740356525"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center text-gray-500 hover:text-green-400 hover:border-green-400/20 transition"
+            >
+              <FaWhatsapp size={16} />
+            </a>
+
+          </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 py-5 text-sm text-gray-400">
-          <p>© 2026 NanoKillX · NHubX</p>
-          <div className="flex gap-5">
-            <Link to="/privacy-policy" className="hover:text-white hover:underline">Privacy</Link>
-            <Link to="/terms-and-conditions" className="hover:text-white hover:underline">Terms</Link>
+
+        {/* divider */}
+        <div className="w-full h-px bg-white/5" />
+
+        {/* bottom */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+
+          <p className="text-gray-600 text-center">
+            © 2026{' '}
+            <span className="text-nhubx-glow-primary">
+              NanoKillX
+            </span>{' '}
+            • NHubX
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link to="/reviews" className="text-gray-600 hover:text-white transition">Reviews</Link>
+            <Link to="/orders" className="text-gray-600 hover:text-white transition">My orders</Link>
+
+            <Link
+              to="/privacy-policy"
+              className="text-gray-600 hover:text-white transition"
+            >
+              Privacy
+            </Link>
+
+            <Link
+              to="/terms-and-conditions"
+              className="text-gray-600 hover:text-white transition"
+            >
+              Terms
+            </Link>
+
           </div>
         </div>
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;

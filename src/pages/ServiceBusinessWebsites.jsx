@@ -19,7 +19,7 @@ export default function ServiceBusinessWebsites() {
     <div className="min-h-screen px-5 pb-20 pt-32 sm:px-8">
       <div className="mx-auto max-w-5xl">
         <header className="max-w-3xl">
-          <h1 className="site-title">Websites for Sri Lankan service businesses</h1>
+          <h1 className="text-4xl font-black tracking-tight sm:text-6xl">Websites for Sri Lankan service businesses</h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-300">Give clients one place to learn about your services and ask for a quote. For consultancies, training providers, and local service teams.</p>
           <p className="mt-4 text-gray-400"><strong className="text-xl text-nhubx-glow-primary">From LKR {entryPlan.price}</strong> for a one-page site. Mini hosting is LKR 499/year. Domains are billed separately.</p>
           <div className="mt-6 flex flex-wrap gap-3">

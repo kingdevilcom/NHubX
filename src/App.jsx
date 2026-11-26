@@ -18,6 +18,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
 import WebPreviewModal from './components/WebPreviewModal';
+import FireParticles from './components/FireParticles';
 import ScrollToTop from './components/ScrollToTop';
 
 import Home from './pages/Home';
@@ -195,9 +196,9 @@ function AppContent() {
         {showStartup && <LoadingScreen key="startup" onComplete={finishStartup} />}
       </AnimatePresence>
       <div inert={showStartup} className="min-h-screen text-white flex flex-col">
-        <a href="#main-content" className="skip-link">Skip to content</a>
+        {!showStartup && !isAdminRoute && <FireParticles zIndex={1} />}
         {!isAdminRoute && <Navbar />}
-        <main id="main-content" tabIndex={-1} className="flex-grow relative z-10">
+        <main className="flex-grow relative z-10">
           <Suspense fallback={showStartup ? null : <PageLoading />}>
             <AnimatedRoutes startupComplete={!showStartup} />
           </Suspense>

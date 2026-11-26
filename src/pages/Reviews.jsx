@@ -38,7 +38,7 @@ export default function Reviews() {
 
   return (
     <section className="mx-auto min-h-screen max-w-6xl px-5 pb-20 pt-28 sm:pt-32">
-      <h1 className="site-title">Customer reviews</h1>
+      <h1 className="text-4xl font-black tracking-tight sm:text-5xl">Customer reviews</h1>
       <p className="mt-3 flex items-start gap-2 text-gray-300"><BadgeCheck size={19} aria-hidden="true" className="mt-0.5 shrink-0 text-nhubx-glow-primary" /> Feedback from customers who completed an order with NHubX.</p>
       {!result && !error && <p role="status" className="mt-6 text-gray-400">Loading reviews…</p>}
       {error && <p role="alert" className="mt-6 text-gray-400">Reviews are temporarily unavailable.</p>}
