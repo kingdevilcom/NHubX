@@ -31,21 +31,7 @@ const Developer = () => {
           className="mb-16"
         >
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.02] border border-white/[0.06] text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4 font-mono">
-
-            System Profile Active
-
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 uppercase tracking-tight leading-none text-white">
-
-            The{' '}
-
-            <span className="glow-text-primary">
-              Developer
-            </span>
-
-          </h1>
+          <h1 className="site-title mb-6">The developer</h1>
 
           <p className="text-gray-500 text-sm sm:text-base leading-relaxed max-w-2xl">
 

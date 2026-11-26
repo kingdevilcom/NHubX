@@ -73,29 +73,9 @@ const Contact = () => {
           className="text-center mb-16 max-w-xl mx-auto"
         >
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-nhubx-glow-primary/10 border border-nhubx-glow-primary/30 text-nhubx-glow-primary text-[10px] font-bold uppercase tracking-widest mb-4">
-
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-
-            AES-256 Handshake Enabled
-
-          </div>
-
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mb-6 uppercase tracking-tight leading-none text-white">
-
-            Secure{' '}
-
-            <span className="glow-text-primary text-nhubx-glow-secondary">
-              Channel
-            </span>
-
-          </h2>
-
-          <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
-
-            Establish secure communication for collaborations,
-            support, business inquiries, or system consultation.
-
+          <h1 className="site-title mb-5">Contact NHubX</h1>
+          <p className="text-lg leading-relaxed text-gray-300">
+            Tell us what you’d like to build, or ask for help with an existing project. We’ll reply by email.
           </p>
 
         </motion.div>
@@ -119,11 +99,13 @@ const Contact = () => {
               {/* name */}
               <div className="flex flex-col gap-2">
 
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 font-mono">
+                <label htmlFor="contact-name" className="text-sm font-semibold">
                   Name
                 </label>
 
                 <input
+                  id="contact-name"
+                  autoComplete="name"
                   type="text"
                   maxLength={80}
                   placeholder="Enter your name"
@@ -139,11 +121,13 @@ const Contact = () => {
               {/* email */}
               <div className="flex flex-col gap-2">
 
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 font-mono">
+                <label htmlFor="contact-email" className="text-sm font-semibold">
                   Email
                 </label>
 
                 <input
+                  id="contact-email"
+                  autoComplete="email"
                   type="email"
                   maxLength={120}
                   placeholder="name@email.com"
@@ -161,11 +145,12 @@ const Contact = () => {
             {/* message */}
             <div className="flex flex-col gap-2">
 
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 font-mono">
+              <label htmlFor="contact-message" className="text-sm font-semibold">
                 Message
               </label>
 
               <textarea
+                id="contact-message"
                 rows="5"
                 maxLength={1900}
                 placeholder="Write your message..."
@@ -200,6 +185,7 @@ const Contact = () => {
             {status === 'error' && (
 
               <motion.div
+                role="alert"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg flex items-center gap-3 text-xs font-mono"
@@ -252,9 +238,9 @@ const Contact = () => {
                 Email
               </p>
 
-              <p className="text-gray-400 font-semibold mt-0.5">
+              <a href="mailto:contact@nhubx.com" className="mt-0.5 inline-block font-semibold text-gray-300 hover:underline">
                 contact@nhubx.com
-              </p>
+              </a>
 
             </div>
 

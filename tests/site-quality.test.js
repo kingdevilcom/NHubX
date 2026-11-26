@@ -226,6 +226,7 @@ test('order transactions handle renewal retries, delivery feedback, private chat
   assert.equal(records.get('orders/review').revisionRequest.status, 'addressed');
   assert.equal(needsCustomerAction(records.get('orders/review')), true);
   assert.equal(records.get('orderEmails/review-' + update.operation).pending, true);
+  await assert.rejects(orderApi(db, customer, { ...approval, delivery: { url: 'https://example.com/old', revisionAt: null } }), { code: 'failed-precondition' });
   await orderApi(db, customer, approval);
   assert.equal(records.get('orders/review').stage, 'Delivered');
 
@@ -284,6 +285,31 @@ test('order transactions handle renewal retries, delivery feedback, private chat
   assert.equal(records.get('publishedOrderReviews/generated-public-id').projectKey, 'catalog-catalogue-entry');
   await orderApi(db, admin, { ...link, projectKey: '' });
   assert.equal(records.get('publishedOrderReviews/generated-public-id').projectReviewKey, null);
+
+  records.set('orderReviews/another', { ...records.get('orderReviews/review'), status: 'pending' });
+  const pendingEdit = { action: 'editPendingReview', id: 'another', createdAt: records.get('orderReviews/another').createdAt, editVersion: 0, showName: false, rating: 3, comment: 'Edited for clarity.' };
+  await assert.rejects(orderApi(db, customer, pendingEdit), { code: 'permission-denied' });
+  await assert.rejects(orderApi(db, admin, { ...pendingEdit, showName: true, displayName: 'Example' }), /keep their name private/);
+  await assert.rejects(orderApi(db, admin, { ...pendingEdit, comment: 'Contact me at customer@example.com' }), { code: 'invalid-argument' });
+  await orderApi(db, admin, pendingEdit);
+  assert.equal(records.get('orderReviews/another').comment, review.comment);
+  assert.equal(records.get('orderReviews/another').edits.comment, pendingEdit.comment);
+  await assert.rejects(orderApi(db, admin, pendingEdit), /review has changed/);
+
+  const publicEdit = { ...pendingEdit, action: 'editPublishedReview', id: 'generated-public-id', rating: 4 };
+  await assert.rejects(orderApi(db, customer, publicEdit), { code: 'permission-denied' });
+  await orderApi(db, admin, publicEdit);
+  assert.equal(records.get('publishedOrderReviews/generated-public-id').comment, publicEdit.comment);
+  assert.equal(records.get('publishedOrderReviews/generated-public-id').publishedAt, published.publishedAt);
+  assert.deepEqual(records.get('reviewMetadata/totals'), { count: 1, ratingSum: 4 });
+  await assert.rejects(orderApi(db, admin, publicEdit), /review has changed/);
+  const named = { ...published, displayName: 'Example' };
+  records.set('publishedOrderReviews/named-review', named);
+  const hideName = { ...publicEdit, id: 'named-review', rating: named.rating };
+  await orderApi(db, admin, hideName);
+  assert.equal(records.get('publishedOrderReviews/named-review').displayName, 'Verified customer');
+  await orderApi(db, admin, { ...hideName, editVersion: 1, showName: true, displayName: 'Example' });
+  assert.equal(records.get('publishedOrderReviews/named-review').displayName, 'Example');
 });
 
 test('order emails distinguish provider acceptance from delivery and expose no message body', () => {

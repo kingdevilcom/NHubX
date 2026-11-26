@@ -51,10 +51,10 @@ export async function orderApi(db, auth, data) {
   const admin = email === 'stharunindu@gmail.com';
   const input = data && typeof data === 'object' ? data : {};
   const { action } = input;
-  if (action === 'reviewPublished' || action === 'reviewLinkProject') return manageProjectReviews(db, admin, input);
+  if (['reviewPublished', 'reviewLinkProject', 'editPublishedReview'].includes(action)) return manageProjectReviews(db, admin, input);
   if (action === 'adminEmailConfig' || action === 'adminEmailSend') return adminEmail(admin, input);
   if (['adminMailboxList', 'adminMailboxRead', 'adminMailboxReplies'].includes(action)) return adminMailbox(admin, input);
-  if (['chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview'].includes(action)) {
+  if (['chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview', 'editPendingReview'].includes(action)) {
     return orderConversation(db, auth, admin, input);
   }
 
@@ -150,6 +150,10 @@ export async function orderApi(db, auth, data) {
       throw new OrderError('permission-denied', 'Order not available.');
     }
     if (applied.exists) return;
+    if ((action === 'approveDelivery' || action === 'requestChanges') && input.delivery !== undefined
+      && (input.delivery?.url !== (order.deliveryUrl ?? '') || input.delivery?.revisionAt !== (order.revisionRequest?.at ?? null))) {
+      throw new OrderError('failed-precondition', 'The delivery has changed. Refresh the order and review the latest delivery.');
+    }
     if (action === 'sendEmail') {
       const subject = text(input.subject, 160, 'the email subject');
       if (/[\r\n]/.test(subject)) invalid('The email subject must be one line.');

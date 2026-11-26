@@ -3,26 +3,27 @@ import { colomboToday } from '../orderWorkspace';
 
 import { openBillingRecord } from '../billingRecord';
 
-export default function OrderSummary({ order, showProgress = false }) {
+export default function OrderSummary({ order, showProgress = false, children }) {
   const { title, stage, total, paid, deposit, scope, dueDate, deliveryUrl, services, timeline, receipts } = order;
   const today = colomboToday();
   return (
     <>
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>{order.orderNumber && <p className="mb-1 text-xs font-bold tracking-wide text-nhubx-glow-primary">{order.orderNumber}</p>}<h2 className="text-xl font-bold">{title}</h2><p className="mt-1 text-sm text-gray-400">Expected delivery {dueDate}</p></div>
-        <p className="rounded-full border border-white/15 px-3 py-1 text-sm">{stage}</p>
+        <div className="min-w-0">{order.orderNumber && <p className="mb-1 text-xs font-bold tracking-wide text-nhubx-glow-primary">{order.orderNumber}</p>}<h2 className="break-words text-xl font-bold">{title}</h2>{stage !== 'Delivered' && <p className="mt-1 text-sm text-gray-400">Expected delivery <time dateTime={dueDate}>{dueDate}</time></p>}</div>
+        <p className="rounded-full border border-nhubx-glow-primary/30 bg-nhubx-glow-primary/10 px-3 py-1 text-sm font-medium text-nhubx-glow-primary">{stage}</p>
       </header>
       {showProgress && <ol aria-label="Order progress" className="mt-4 grid grid-cols-5 gap-1.5 text-xs sm:text-sm">
         {stages.map((step, index) => <li key={step} aria-current={step === stage ? 'step' : undefined} className={step === stage ? 'font-bold text-white' : 'text-gray-400'}><span aria-hidden="true" className={`mb-1.5 block h-1 rounded-full ${index <= stages.indexOf(stage) ? 'bg-nhubx-glow-primary' : 'bg-white/10'}`} />{step}</li>)}
       </ol>}
-      <p className="mt-3 whitespace-pre-wrap text-sm text-gray-300">{scope}</p>
+      <p className="mt-3 whitespace-pre-wrap break-words text-sm text-gray-300">{scope}</p>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         {[['Development total', total], ['Deposit', deposit], ['Paid', paid], ['Balance due', total - paid]].map(([label, value]) => (
-          <div key={label}><dt className="text-gray-400">{label}</dt><dd className="font-semibold">{formatLkr(value)}</dd></div>
+          <div key={label} className="min-w-0 rounded-lg border border-white/10 bg-white/[0.03] p-3"><dt className="text-xs text-gray-400">{label}</dt><dd className="mt-1 break-words font-semibold tabular-nums">{formatLkr(value)}</dd></div>
         ))}
       </dl>
       <button type="button" className="mt-3 block text-sm text-nhubx-glow-primary underline" onClick={() => openBillingRecord(order, 'development')}>View development invoice</button>
       {deliveryUrl && <a href={deliveryUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-nhubx-glow-primary underline">Open delivery</a>}
+      {children}
       <details className="mt-4 border-t border-white/10 pt-3" open={services.length > 0}>
         <summary className="cursor-pointer font-semibold">Annual renewals</summary>
         {services.length ? (

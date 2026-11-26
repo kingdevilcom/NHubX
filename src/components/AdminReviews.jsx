@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { orderButton, orderField, orderRequest } from '../orders';
 import ReviewStars from './ReviewStars';
 import AdminPublishedReviews from './AdminPublishedReviews';
+import AdminReviewEditor from './AdminReviewEditor';
 
 const reviewDate = new Intl.DateTimeFormat('en-LK', { dateStyle: 'medium', timeZone: 'Asia/Colombo' });
 
@@ -33,17 +34,31 @@ function ReviewQueue() {
     return () => { active = false; };
   }, [refresh]);
 
-  async function moderate(event, { id, createdAt }, status) {
+  async function moderate(event, { id, createdAt, editVersion }, status) {
     event.preventDefault();
     setBusy(id);
     setNotice(null);
     const reason = new FormData(event.currentTarget).get('reason');
     try {
-      await orderRequest('moderateReview', { id, createdAt, status, reason });
+      await orderRequest('moderateReview', { id, createdAt, editVersion, status, reason });
       setReviews((items) => items.filter((item) => item.id !== id));
       setNotice({ message: status === 'published' ? 'Review published.' : 'Review withheld.' });
     } catch (error) { setNotice({ message: error.message, error: true }); }
     finally { setBusy(null); }
+  }
+
+  async function edit({ id, createdAt, editVersion }, fields) {
+    setBusy(id);
+    setNotice(null);
+    try {
+      const saved = await orderRequest('editPendingReview', { id, createdAt, editVersion, ...fields });
+      setReviews((items) => items.map((item) => item.id === id ? { ...item, ...saved } : item));
+      setNotice({ message: 'Review edits saved. The review is awaiting moderation.' });
+      return true;
+    } catch (error) {
+      setNotice({ message: error.message, error: true });
+      return false;
+    } finally { setBusy(null); }
   }
 
   return (
@@ -76,7 +91,10 @@ function ReviewQueue() {
             <ReviewStars rating={review.rating} />
           </div>
           <blockquote className="my-4 whitespace-pre-wrap break-words rounded-lg bg-white/[0.04] p-3 text-gray-200">{review.comment}</blockquote>
-          <form onSubmit={(event) => moderate(event, review, 'published')}><button className={orderButton} disabled={loading || Boolean(busy)}>Publish review</button></form>
+          <div className="space-y-3">
+            <AdminReviewEditor key={review.createdAt + '-' + review.editVersion} review={review} disabled={loading || Boolean(busy)} onSave={(fields) => edit(review, fields)} />
+            <form onSubmit={(event) => moderate(event, review, 'published')}><button className={orderButton} disabled={loading || Boolean(busy)}>Publish review</button></form>
+          </div>
           <details className="mt-3"><summary className="cursor-pointer text-sm font-medium text-gray-300">Withhold review</summary>
             <form onSubmit={(event) => moderate(event, review, 'withheld')} className="mt-2 flex flex-wrap gap-2">
               <label><span className="sr-only">Moderation reason</span><select name="reason" className={orderField} defaultValue="" required><option value="" disabled>Choose a reason</option>{['Spam', 'Abuse', 'Personal information', 'Unrelated to the order'].map((reason) => <option key={reason}>{reason}</option>)}</select></label>

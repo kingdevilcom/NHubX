@@ -227,16 +227,9 @@ const Projects = () => {
             className="text-center mb-16"
           >
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.02] border border-white/[0.06] text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4 font-mono">
-              Operational Matrix
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black mb-6 uppercase tracking-tight leading-none text-white">
-              Our <span className="glow-text-primary">Projects</span>
-            </h2>
-
-            <p className="text-gray-500 mx-auto max-w-xl text-xs sm:text-sm leading-relaxed">
-              A curated catalog of secure and modern digital systems.
+            <h1 className="site-title mb-5">Projects</h1>
+            <p className="mx-auto max-w-xl text-lg leading-relaxed text-gray-300">
+              Explore websites and apps we’ve built, with case studies and live demos.
             </p>
 
           </motion.div>
@@ -282,9 +275,9 @@ const Projects = () => {
 
                 <button
                   onClick={() => openModal(project)}
-                  className="mt-3 w-full text-[10px] font-bold text-white bg-nhubx-glow-primary hover:bg-nhubx-glow-primary/95 px-4 py-2.5 rounded-lg transition-all uppercase tracking-wider"
+                  className="site-action mt-3 w-full bg-nhubx-glow-primary hover:bg-nhubx-glow-hover"
                 >
-                  Inspect Module
+                  View project details
                 </button>
 
               </Card>

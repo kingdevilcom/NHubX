@@ -28,15 +28,11 @@ const About = () => {
           className="mb-16 max-w-3xl"
         >
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/[0.02] border border-white/[0.06] text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4 font-mono">
-            NHubX Protocol
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight leading-none text-white mb-6">
+          <h1 className="site-title mb-6">
             {content.aboutTitle}
           </h1>
 
-          <p className="text-gray-500 text-sm sm:text-base md:text-lg leading-relaxed">
+          <p className="text-lg leading-relaxed text-gray-300">
             {content.aboutDescription}
           </p>
 

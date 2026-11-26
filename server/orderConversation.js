@@ -13,9 +13,28 @@ export function publicReview(review) {
   return { displayName, rating, comment, publishedAt };
 }
 
+export function adminReviewName(review) {
+  return { editableName: review.hiddenDisplayName ?? (review.displayName === 'Verified customer' ? '' : review.displayName) };
+}
+
 function validatedText(value, max, message) {
   if (typeof value !== 'string' || !value.trim() || value.length > max) invalid(message);
   return value.trim();
+}
+
+export function reviewEdits(input, review) {
+  const { editableName } = adminReviewName(review);
+  if (typeof input.showName !== 'boolean') invalid('Choose whether to show the customer name.');
+  if (input.showName && !editableName) invalid('The customer chose to keep their name private.');
+  const displayName = input.showName ? validatedText(input.displayName, 80, 'Enter a display name of up to 80 characters.') : 'Verified customer';
+  const comment = validatedText(input.comment, 1000, 'Write a review of up to 1,000 characters.');
+  if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(displayName + ' ' + comment)) invalid('Remove email addresses from the review.');
+  if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) invalid('Choose a rating from 1 to 5.');
+  return { displayName, comment, rating: input.rating, hiddenDisplayName: input.showName ? null : editableName || null };
+}
+
+export function checkReviewVersion(review, input) {
+  if ((review.editVersion ?? 0) !== input.editVersion) invalid('This review has changed. Refresh the list and try again.');
 }
 
 export async function orderConversation(db, auth, admin, input) {
@@ -24,8 +43,10 @@ export async function orderConversation(db, auth, admin, input) {
     if (!admin) deny();
     const pending = await db.collection('orderReviews').where('status', '==', 'pending').limit(50).get();
     return pending.docs.map((snapshot) => {
-      const { displayName, rating, comment, createdAt, orderNumber } = snapshot.data();
-      return { id: snapshot.id, displayName, rating, comment, createdAt, orderNumber };
+      const review = snapshot.data();
+      const edited = { ...review, ...review.edits };
+      const { displayName, rating, comment } = edited;
+      return { id: snapshot.id, displayName, rating, comment, ...adminReviewName(edited), createdAt: review.createdAt, orderNumber: review.orderNumber, editVersion: review.editVersion ?? 0 };
     }).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
   if (typeof input.id !== 'string' || !/^[\w-]{1,110}$/.test(input.id)) invalid('Invalid order ID.');
@@ -41,6 +62,19 @@ export async function orderConversation(db, auth, admin, input) {
     access(order);
     if (!canViewOrder(order, auth, false)) deny();
   };
+  if (action === 'editPendingReview') {
+    if (!admin) deny();
+    return db.runTransaction(async (tx) => {
+      const review = (await tx.get(reviewRef)).data();
+      if (!review) throw new OrderError('not-found', 'Review not found.');
+      if (review.status !== 'pending' || review.createdAt !== input.createdAt) invalid('This review has changed. Refresh the queue and try again.');
+      checkReviewVersion(review, input);
+      const edits = reviewEdits(input, { ...review, ...review.edits });
+      const editVersion = input.editVersion + 1;
+      tx.update(reviewRef, { edits, editVersion });
+      return { ...edits, ...adminReviewName(edits), editVersion };
+    });
+  }
   if (action === 'moderateReview') {
     if (!admin) deny();
     if (!['published', 'withheld'].includes(input.status)) invalid('Choose a moderation action.');
@@ -54,12 +88,17 @@ export async function orderConversation(db, auth, admin, input) {
       if (review.status === input.status) return { status: review.status };
       if (review.status !== 'pending') invalid('This review has already been moderated.');
       if (input.createdAt && input.createdAt !== review.createdAt) invalid('This review has changed. Refresh the queue before moderating it.');
+      if (input.editVersion !== undefined || review.editVersion !== undefined) checkReviewVersion(review, input);
       const publishedAt = input.status === 'published' ? new Date().toISOString() : null;
       const reason = input.status === 'withheld' ? input.reason : null;
       if (publishedAt) {
         const existing = (await tx.get(totals)).data();
-        tx.set(totals, { count: (existing?.count ?? 0) + 1, ratingSum: (existing?.ratingSum ?? 0) + review.rating });
-        tx.create(db.collection('publishedOrderReviews').doc(), publicReview({ ...review, publishedAt }));
+        const published = publicReview({ ...review, ...review.edits, publishedAt });
+        tx.set(totals, { count: (existing?.count ?? 0) + 1, ratingSum: (existing?.ratingSum ?? 0) + published.rating });
+        tx.create(db.collection('publishedOrderReviews').doc(), {
+          ...published,
+          ...(review.edits?.hiddenDisplayName ? { hiddenDisplayName: review.edits.hiddenDisplayName } : {}),
+        });
       }
       tx.update(reviewRef, { status: input.status, publishedAt, reason });
       tx.update(ref, { reviewStatus: input.status, reviewModerationReason: reason });

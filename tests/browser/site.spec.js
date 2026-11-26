@@ -348,17 +348,28 @@ test('admin review queue shows stars and can publish a low-rated verified review
   await expect(page.getByText('No reviews awaiting moderation.')).toBeVisible();
 });
 
-test('admin can link a published review and Projects shows it on the selected case study', async ({ page }) => {
+test('admin can edit, hide the name, and link a published review to a case study', async ({ page }) => {
   await mockSignedInUser(page, 'stharunindu@gmail.com');
-  const review = { id: 'review-example', projectKey: '', displayName: 'Verified customer', rating: 4, comment: 'The consultancy site works well.', publishedAt: '2026-11-24T08:00:00.000Z' };
+  const review = { id: 'review-example', projectKey: '', displayName: 'Example', editableName: 'Example', editVersion: 0, rating: 4, comment: 'The consultancy site works well.', publishedAt: '2026-11-24T08:00:00.000Z' };
   let linkedProject = '';
   await page.route('**/api/orders', (route) => {
     const input = route.request().postDataJSON();
+    if (input.action === 'editPublishedReview') {
+      expect(input.showName).toBe(false);
+      Object.assign(review, { comment: input.comment, rating: input.rating, displayName: 'Verified customer', editVersion: 1 });
+      return route.fulfill({ json: { result: review } });
+    }
     if (input.action === 'reviewLinkProject') linkedProject = input.projectKey;
     return route.fulfill({ json: { result: input.action === 'reviewPublished' ? { items: [review], next: null } : { projectKey: linkedProject } } });
   });
   await page.route('**/api/reviews?projects=*', (route) => route.fulfill({ json: { projects: { [linkedProject]: [review] } } }));
   await page.goto('/admin?tab=reviews&view=published');
+  await page.getByRole('button', { name: 'Edit review' }).click();
+  await page.getByRole('checkbox', { name: 'Show customer name publicly' }).uncheck();
+  await page.getByRole('textbox', { name: 'Review text' }).fill('The consultancy site is easy to use.');
+  await page.getByRole('button', { name: 'Save review' }).click();
+  await expect(page.getByText('Published review updated.')).toBeVisible();
+  await expect(page.getByText('Example', { exact: true })).toHaveCount(0);
   await page.getByRole('combobox', { name: 'Linked project' }).selectOption({ label: 'NextPath Advisory' });
   await page.getByRole('button', { name: 'Save project link' }).click();
   await expect(page.getByText('Project link saved.')).toBeVisible();

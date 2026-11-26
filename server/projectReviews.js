@@ -1,5 +1,5 @@
 import { caseStudies } from '../src/projectCaseStudies.js';
-import { publicReview } from './orderConversation.js';
+import { adminReviewName, checkReviewVersion, publicReview, reviewEdits } from './orderConversation.js';
 import { OrderError } from './orderError.js';
 
 const publishedId = /^[\w-]{1,110}$/;
@@ -34,15 +34,33 @@ export async function manageProjectReviews(db, admin, input) {
     return {
       items: page.docs.slice(0, 20).map((doc) => {
         const review = doc.data();
-        return { ...publicReview(review), id: doc.id, projectKey: review.projectKey ?? '' };
+        return { ...publicReview(review), ...adminReviewName(review), id: doc.id, projectKey: review.projectKey ?? '', editVersion: review.editVersion ?? 0 };
       }),
       next: page.size > 20 ? page.docs[19].id : null,
     };
   }
 
   const { id, projectKey } = input;
-  if (typeof id !== 'string' || !publishedId.test(id) || (projectKey !== '' && !validProjectReviewKey(projectKey))) invalid('Choose a published review and project.');
+  if (typeof id !== 'string' || !publishedId.test(id)) invalid('Choose a published review.');
   const ref = collection.doc(id);
+  if (input.action === 'editPublishedReview') {
+    const totals = db.collection('reviewMetadata').doc('totals');
+    return db.runTransaction(async (tx) => {
+      const review = (await tx.get(ref)).data();
+      if (!review) throw new OrderError('not-found', 'Published review not found.');
+      checkReviewVersion(review, input);
+      const edits = reviewEdits(input, review);
+      if (edits.rating !== review.rating) {
+        const summary = (await tx.get(totals)).data();
+        if (!summary) throw new OrderError('failed-precondition', 'Review totals are unavailable.');
+        tx.update(totals, { ratingSum: summary.ratingSum + edits.rating - review.rating });
+      }
+      const editVersion = input.editVersion + 1;
+      tx.update(ref, { ...edits, editVersion });
+      return { ...edits, ...adminReviewName(edits), editVersion };
+    });
+  }
+  if (projectKey !== '' && !validProjectReviewKey(projectKey)) invalid('Choose an available project.');
   return db.runTransaction(async (tx) => {
     const review = (await tx.get(ref)).data();
     if (!review) throw new OrderError('not-found', 'Published review not found.');

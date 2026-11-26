@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { Link } from 'react-router-dom';
-import { Package, RefreshCw } from 'lucide-react';
+import { Package, RefreshCw, Search } from 'lucide-react';
 import { app } from '../firebase';
-import { formatLkr, orderButton, orderRequest } from '../orders';
-import { hasPendingRevision, needsCustomerAction, nextOrderActions, upcomingRenewals } from '../orderWorkspace';
+import { formatLkr, orderButton, orderField, orderRequest } from '../orders';
+import { customerOrdersForView, hasPendingRevision, needsCustomerAction, nextOrderActions, upcomingRenewals } from '../orderWorkspace';
 import OrderSummary from '../components/OrderSummary';
 import OrderChat from '../components/OrderChat';
 import OrderReview from '../components/OrderReview';
@@ -25,11 +25,13 @@ export default function CustomerOrders() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const retry = useRef(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [feedbackOrder, setFeedbackOrder] = useState(null);
   const [feedback, setFeedback] = useState('');
   const ordersToReview = orders.filter(needsCustomerAction);
-  const visible = orders.filter((order) => filter === 'all' || (filter === 'action' && needsCustomerAction(order)) || (filter === 'active' && order.stage !== 'Delivered') || (filter === 'delivered' && order.stage === 'Delivered'));
+  const visible = customerOrdersForView(orders, search, filter);
 
   useEffect(() => {
     document.title = 'My orders | NHubX';
@@ -46,11 +48,17 @@ export default function CustomerOrders() {
   }, [user, refreshCount]);
 
   async function change(action, order, message) {
+    if (pending) return;
+    const delivery = action !== 'accept' ? { url: order.deliveryUrl ?? '', revisionAt: order.revisionRequest?.at ?? null } : undefined;
+    const input = { id: order.id, message, delivery };
+    const fingerprint = JSON.stringify({ uid: user.uid, action, ...input });
+    if (retry.current?.fingerprint !== fingerprint) retry.current = { fingerprint, operation: crypto.randomUUID() };
     setPending(order.id);
     setError('');
     setNotice('');
     try {
-      await orderRequest(action, { id: order.id, operation: crypto.randomUUID(), message });
+      await orderRequest(action, { ...input, operation: retry.current.operation });
+      retry.current = null;
       setResult((current) => current?.uid === user.uid ? {
         ...current,
         orders: current.orders.map((item) => item.id !== order.id ? item : action === 'requestChanges'
@@ -78,8 +86,8 @@ export default function CustomerOrders() {
   return (
     <section className="mx-auto min-h-screen max-w-5xl px-5 pb-16 pt-28 sm:pt-32">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
-        <div><h1 className="text-4xl font-black tracking-tight">My orders</h1><p className="mt-2 text-gray-400">Review quotes, track delivery, and manage annual renewals.</p></div>
-        {user && <div className="flex max-w-full flex-wrap items-center gap-2 text-sm"><span className="break-all text-gray-400">{user.email}</span><button type="button" aria-label="Refresh orders" disabled={loading || Boolean(pending)} onClick={() => { setError(''); setLoading(true); setRefreshCount((count) => count + 1); }} className="rounded-lg border border-white/15 p-2 disabled:opacity-50"><RefreshCw size={16} /></button><button onClick={() => { setResult(null); setError(''); setNotice(''); setFilter('all'); setFeedback(''); setFeedbackOrder(null); signOut(auth).catch((err) => setError(err.message)); }} className="rounded-lg border border-white/15 px-3 py-2">Sign out</button></div>}
+        <div><h1 className="site-title">My orders</h1><p className="mt-3 text-gray-300">Review quotes, track delivery, and manage annual renewals.</p></div>
+        {user && <div className="flex max-w-full flex-wrap items-center gap-2 text-sm"><span className="break-all text-gray-400">{user.email}</span><button type="button" aria-label="Refresh orders" disabled={loading || Boolean(pending)} onClick={() => { setError(''); setLoading(true); setRefreshCount((count) => count + 1); }} className="rounded-lg border border-white/15 p-2 disabled:opacity-50"><RefreshCw size={16} /></button><button disabled={Boolean(pending)} onClick={() => { setResult(null); setError(''); setNotice(''); setFilter('all'); setSearch(''); setFeedback(''); setFeedbackOrder(null); signOut(auth).catch((err) => setError(err.message)); }} className="rounded-lg border border-white/15 px-3 py-2 disabled:opacity-50">Sign out</button></div>}
       </header>
       {user === undefined && <p className="mt-5" role="status">Checking sign-in…</p>}
       {user === null && <div className="glass mt-6 max-w-xl rounded-2xl p-6"><Package size={26} className="mb-3 text-nhubx-glow-primary" aria-hidden="true" /><h2 className="mb-2 text-lg font-bold">Sign in to your orders</h2><p className="mb-4 text-gray-400">Use the Google account with the same email address as your quote.</p><button className={orderButton} disabled={loading} onClick={signIn}>Sign in with Google</button></div>}
@@ -93,12 +101,16 @@ export default function CustomerOrders() {
             <div key={label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4"><dt className="text-sm text-gray-400">{label}</dt><dd className="mt-1 text-xl font-bold">{value}</dd></div>
           ))}
         </dl>
-        <div aria-label="Filter orders" className="mt-5 flex flex-wrap gap-2">{filters.map(([id, label]) => <button type="button" key={id} aria-pressed={filter === id} onClick={() => setFilter(id)} className={`rounded-lg border px-3 py-2 text-sm ${filter === id ? 'border-nhubx-glow-primary/40 bg-nhubx-glow-primary/10 text-nhubx-glow-primary' : 'border-white/15 text-gray-300 hover:bg-white/5'}`}>{label}</button>)}</div>
-        {!visible.length && <p className="mt-4 text-sm text-gray-400">No orders in this view.</p>}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <div role="group" aria-label="Filter orders" className="flex flex-wrap gap-2">{filters.map(([id, label]) => <button type="button" key={id} aria-pressed={filter === id} onClick={() => setFilter(id)} className={`rounded-lg border px-3 py-2 text-sm ${filter === id ? 'border-nhubx-glow-primary/40 bg-nhubx-glow-primary/10 text-nhubx-glow-primary' : 'border-white/15 text-gray-300 hover:bg-white/5'}`}>{label}</button>)}</div>
+          <label className="relative w-full sm:w-64"><span className="sr-only">Search your orders</span><Search size={16} aria-hidden="true" className="absolute left-3 top-2.5 text-gray-400" /><input type="search" className={orderField + ' pl-9'} placeholder="Search order or invoice" value={search} onChange={(event) => setSearch(event.target.value)} /></label>
+        </div>
+        {!visible.length && <div className="glass mt-4 rounded-xl p-5 text-sm text-gray-300"><p>No orders match your search and filters.</p><button type="button" className="mt-2 text-nhubx-glow-primary underline" onClick={() => { setSearch(''); setFilter('all'); }}>Clear search and filters</button></div>}
       </>}
       {user && visible.map((order) => (
         <article key={order.id} className="glass mt-5 rounded-2xl p-5 sm:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+          <OrderSummary order={order} showProgress>
+          <div className={`mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${needsCustomerAction(order) ? 'border-nhubx-glow-primary/30 bg-nhubx-glow-primary/10' : 'border-white/10 bg-white/[0.03]'}`}>
             <div><p className="text-sm font-semibold">{hasPendingRevision(order) ? 'Changes requested' : needsCustomerAction(order) ? 'Needs your action' : 'What’s next'}</p><p className="mt-1 text-sm text-gray-400">{hasPendingRevision(order) ? 'NHubX has your feedback. You’ll be able to review the updated delivery here.' : nextOrderActions[order.stage]}</p></div>
             {needsCustomerAction(order) && <div className="flex flex-wrap gap-2">
               {order.stage === 'Review' && <button type="button" disabled={Boolean(pending)} aria-expanded={feedbackOrder === order.id} className="rounded-lg border border-white/20 px-4 py-2.5 text-sm font-semibold disabled:opacity-50" onClick={() => { setFeedbackOrder(feedbackOrder === order.id ? null : order.id); setFeedback(''); }}>Request changes</button>}
@@ -110,7 +122,7 @@ export default function CustomerOrders() {
             <button className={orderButton} disabled={Boolean(pending) || !feedback.trim()}>Send feedback</button>
           </form>}
           {order.revisionRequest && <details className="mb-4 rounded-xl border border-white/10 p-4 text-sm"><summary className="cursor-pointer font-semibold">Latest review feedback</summary><p className="mt-2 whitespace-pre-wrap break-words text-gray-300">{order.revisionRequest.message}</p>{order.revisionRequest.response && <p className="mt-3 whitespace-pre-wrap break-words text-gray-400">NHubX: {order.revisionRequest.response}</p>}</details>}
-          <OrderSummary order={order} showProgress />
+          </OrderSummary>
           <OrderChat order={order} onRead={markChatRead} />
           <OrderReview order={order} onSubmitted={(id) => setResult((current) => current && ({
             ...current,

@@ -56,7 +56,7 @@ export default function OrderReview({ order, onSubmitted }) {
           <textarea id={commentId} aria-describedby={commentId + '-count'} className={orderField + ' mt-1'} name="comment" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={1000} rows={4} placeholder="Tell others about your experience with NHubX" required />
           <p id={commentId + '-count'} className="mt-1 text-right text-xs text-gray-400">{comment.length}/1,000 characters</p>
         </div>
-        <label className="block max-w-xs text-sm font-semibold">Public display name<select className={orderField + ' mt-1'} name="display"><option value="anonymous">Verified customer</option><option value="firstName">My first name</option></select></label>
+        <label className="block max-w-xs text-sm font-semibold">Public display name<select className={orderField + ' mt-1'} name="display"><option value="anonymous">Hide my name (Verified customer)</option><option value="firstName">Show my first name</option></select></label>
         <p className="text-sm text-gray-400">Share your experience without including email addresses, phone numbers, or other private details.</p>
         <label className="flex items-start gap-2 rounded-lg border border-white/10 p-3 text-sm"><input className="mt-1" type="checkbox" name="consent" required /> I agree to publish this review and my selected display name.</label>
         {error && <p role="alert" className="text-sm text-red-300">{error}</p>}

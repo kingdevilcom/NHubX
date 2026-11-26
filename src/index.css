@@ -12,20 +12,16 @@
   }
 
   html {
-    background-color: #000000;
+    background-color: #0a0a0a;
     scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
   }
 
   body {
     min-height: 100vh;
     background-color: #0a0a0a;
-    /* Centered orange radial gradient matching the loading screen background exactly */
-    background-image: radial-gradient(
-      circle at center,
-      rgb(var(--fire-primary)/0.05) 0%,
-      transparent 70%
-    );
-    background-attachment: fixed;
+    background-image: radial-gradient(ellipse 55rem 34rem at 78% 0, rgb(var(--fire-primary) / 0.085), transparent 85%);
+    background-repeat: no-repeat;
     @apply text-white font-sans antialiased overflow-x-hidden;
     font-family: 'Outfit', sans-serif;
   }
@@ -144,6 +140,62 @@
 }
 
 @layer components {
+  .site-container {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
+  }
+
+  .site-title {
+    font-size: clamp(2.5rem, 5vw, 4.375rem);
+    line-height: 1.04;
+    letter-spacing: -0.055em;
+    @apply font-bold text-white;
+  }
+
+  .site-kicker {
+    @apply text-xs font-bold uppercase tracking-[0.13em] text-nhubx-glow-primary;
+  }
+
+  .site-action {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-colors;
+  }
+
+  .site-feature {
+    background: linear-gradient(145deg, rgb(var(--fire-primary) / 0.1), #141416 65%);
+  }
+
+  .site-path + .site-path {
+    @apply border-t sm:border-l sm:border-t-0;
+  }
+
+  .site-path:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .public-nav {
+    @apply fixed inset-x-0 top-3 z-50 mx-auto max-w-7xl rounded-2xl border border-white/10 bg-[#101012]/95 px-3 shadow-lg backdrop-blur-xl sm:top-4 sm:px-4;
+    width: calc(100% - 2rem);
+  }
+
+  .public-nav-inner {
+    @apply flex min-h-14 items-center justify-between gap-2;
+  }
+
+  .public-nav-link {
+    @apply min-h-11 whitespace-nowrap rounded-lg px-2.5 py-3 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5 hover:text-white lg:px-3.5;
+  }
+
+  .public-nav-link[aria-current="page"] {
+    @apply bg-nhubx-glow-primary/10 text-nhubx-glow-primary;
+  }
+
+  .public-mobile-nav {
+    @apply max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-white/10 py-2;
+  }
+
+  .skip-link {
+    @apply fixed left-4 top-4 z-[60] -translate-y-24 rounded-lg bg-white px-4 py-3 font-semibold text-black focus:translate-y-0;
+  }
+
   .glass {
     @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.06] rounded-xl;
   }

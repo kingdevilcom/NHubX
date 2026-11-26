@@ -22,6 +22,16 @@ export function upcomingRenewals(orders, today = colomboToday()) {
 export const hasPendingRevision = (order) => order.stage === 'Review' && order.revisionRequest?.status === 'pending';
 export const needsCustomerAction = (order) => ['Quote sent', 'Review'].includes(order.stage) && !hasPendingRevision(order);
 
+export function customerOrdersForView(orders, search, filter) {
+  return filterAdminOrders(orders, search, '').filter((order) => filter === 'all'
+    || (filter === 'action' && needsCustomerAction(order))
+    || (filter === 'active' && order.stage !== 'Delivered')
+    || (filter === 'delivered' && order.stage === 'Delivered'))
+    .sort((a, b) => Number(needsCustomerAction(b)) - Number(needsCustomerAction(a))
+      || (b.createdAt ?? '').localeCompare(a.createdAt ?? '')
+      || a.id.localeCompare(b.id));
+}
+
 export function filterAdminOrders(orders, search, stage) {
   const term = search.trim().toLowerCase();
   const billingSequence = /^(?:inv|ren|rct)-(\d+)(?:-|$)/.exec(term)?.[1];

@@ -105,7 +105,7 @@ export default function AdminOrders() {
       </details>}
       <div className="grid gap-4 lg:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.6fr)]">
         <section className="min-w-0 self-start rounded-xl border border-white/10 bg-[#19191b] p-4" aria-label="Order list">
-          <div className="flex items-center justify-between gap-3"><h2 className="font-bold">Order list</h2><button type="button" aria-label="Refresh orders" disabled={loading || busy} onClick={loadOrders} className="rounded-lg border border-white/15 p-2 text-gray-300 disabled:opacity-50"><RefreshCw size={16} /></button></div>
+          <div className="flex items-center justify-between gap-3"><div><h2 className="font-bold">Order list</h2>{!loading && !loadError && <p className="mt-1 text-xs text-gray-400">{visible.length} of {orders.length} loaded orders</p>}</div><button type="button" aria-label="Refresh orders" disabled={loading || busy} onClick={loadOrders} className="rounded-lg border border-white/15 p-2 text-gray-300 disabled:opacity-50"><RefreshCw size={16} /></button></div>
           <div className="mt-3 grid gap-2">
             <label className="relative"><span className="sr-only">Search orders</span><Search size={16} aria-hidden="true" className="absolute left-2.5 top-2.5 text-gray-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, invoice or customer" className={orderField + ' pl-8'} /></label>
             <label><span className="sr-only">Filter orders by stage</span><select value={stage} onChange={(event) => setStage(event.target.value)} className={orderField}><option value="">All stages</option><option value="unread">Unread messages</option><option value="revision">Changes requested</option>{stages.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -120,7 +120,7 @@ export default function AdminOrders() {
         <div ref={detail} className="min-w-0 scroll-mt-4">
         {order && (
         <article key={order.id} className="rounded-xl border border-white/10 bg-[#19191b] p-5">
-          <OrderSummary order={order} />
+          <OrderSummary order={order} showProgress />
           <OrderChat order={order} admin onRead={markChatRead} />
           <p className="mt-3 break-all text-sm text-gray-400">{order.customerName} · {order.customerEmail}</p>
           {order.revisionRequest && <section aria-label="Review feedback" className="mt-4 rounded-xl border border-nhubx-glow-primary/30 bg-nhubx-glow-primary/5 p-4">

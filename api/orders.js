@@ -2,7 +2,7 @@ import { FirebaseConfigError, firebaseServer } from '../server/firebaseAdmin.js'
 import { OrderError, orderApi } from '../server/orders.js';
 import { flushOrderJobs } from '../server/orderJobs.js';
 
-const errorStatuses = { 'invalid-argument': 400, unauthenticated: 401, 'permission-denied': 403, 'not-found': 404, unavailable: 503 };
+const errorStatuses = { 'invalid-argument': 400, unauthenticated: 401, 'permission-denied': 403, 'not-found': 404, 'failed-precondition': 409, unavailable: 503 };
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     try { user = await client.auth.verifyIdToken(match[1], true); }
     catch { return res.status(401).json({ error: 'Please sign in again.' }); }
     const result = await orderApi(client.db, user, req.body);
-    if (!['list', 'emailHistory', 'checkEmail', 'requestChanges', 'chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview', 'reviewPublished', 'reviewLinkProject', 'adminEmailConfig', 'adminEmailSend', 'adminMailboxList', 'adminMailboxRead', 'adminMailboxReplies'].includes(req.body?.action)) {
+    if (!['list', 'emailHistory', 'checkEmail', 'requestChanges', 'chatList', 'chatSend', 'submitReview', 'reviewQueue', 'moderateReview', 'editPendingReview', 'reviewPublished', 'reviewLinkProject', 'editPublishedReview', 'adminEmailConfig', 'adminEmailSend', 'adminMailboxList', 'adminMailboxRead', 'adminMailboxReplies'].includes(req.body?.action)) {
       await flushOrderJobs(client.db, 2, result.emailId).catch(() => console.error('Order notifications remain queued.'));
     }
     return res.status(200).json({ result });

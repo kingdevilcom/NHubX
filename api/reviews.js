@@ -8,6 +8,7 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Use GET.' });
   }
+  res.setHeader('Cache-Control', 'no-store');
   const rawLimit = req.query?.limit;
   if (rawLimit !== undefined && (typeof rawLimit !== 'string' || !/^(?:[1-9]|1[0-9]|20)$/.test(rawLimit))) {
     return res.status(400).json({ error: 'Invalid review page size.' });
@@ -25,7 +26,6 @@ export default async function handler(req, res) {
     const reviews = client.db.collection('publishedOrderReviews');
     if (projectKeys.length) {
       const projects = await reviewsByProject(reviews, projectKeys);
-      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
       return res.status(200).json({ projects });
     }
     let query = reviews.orderBy('publishedAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
@@ -38,7 +38,6 @@ export default async function handler(req, res) {
     const last = page.docs[limit - 1];
     const next = page.size > limit ? last.data().publishedAt + '~' + last.id : null;
     const count = summary.data()?.count ?? 0;
-    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=120');
     return res.status(200).json({ next, reviews: page.docs.slice(0, limit).map((doc) => publicReview(doc.data())), count, average: count ? summary.data().ratingSum / count : null });
   } catch (error) {
     console.error('Public reviews failed:', error.code || error.name);

@@ -185,24 +185,23 @@ const Pricing = ({ ready }) => {
   };
 
   return (
-    <div className="min-h-screen pt-32 pb-24 px-4 sm:px-6">
+    <div className="site-container min-h-screen pb-20 pt-28 sm:pt-36">
       <div className="max-w-7xl mx-auto">
-        <header className="max-w-3xl mx-auto text-center mb-14">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-nhubx-glow-primary mb-4">Simple Sri Lankan pricing</p>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-5">A website plan for every stage.</h1>
-          <p className="text-gray-500 leading-relaxed">Custom websites with transparent development, setup and annual hosting costs. Choose a starting point and we’ll confirm the final scope before work begins.</p>
+        <header className="mx-auto mb-12 max-w-3xl text-center">
+          <h1 className="site-title mb-5">A website plan for every stage.</h1>
+          <p className="text-lg leading-relaxed text-gray-300">Compare one-time development prices and annual hosting costs. Choose a plan and we’ll confirm the scope before work begins.</p>
         </header>
 
         <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4 items-stretch">
           {plans.map((plan) => (
-            <article key={plan.name} className={`relative flex flex-col rounded-2xl border p-6 ${plan.popular ? 'border-nhubx-glow-primary/60 bg-nhubx-glow-primary/[0.07] shadow-glow' : 'border-white/[0.08] bg-white/[0.02]'}`}>
-              {plan.popular && <span className="absolute -top-3 left-5 rounded-full bg-nhubx-glow-primary px-3 py-1 text-[9px] font-black uppercase tracking-wider">Most popular</span>}
+            <article key={plan.name} className={`relative flex flex-col rounded-2xl border p-5 ${plan.popular ? 'border-nhubx-glow-primary/50 bg-nhubx-glow-primary/[0.07]' : 'border-white/10 bg-white/[0.03]'}`}>
+              {plan.popular && <span className="absolute -top-3 left-5 rounded-full bg-nhubx-glow-primary px-3 py-1 text-xs font-bold">Most popular</span>}
               <h2 className="text-xl font-bold">{plan.name}</h2>
-              <p className="mt-3 min-h-16 text-xs leading-relaxed text-gray-500">{plan.description}</p>
-              <div className="my-6"><span className="text-xs text-gray-500">LKR</span><p className="text-3xl font-black text-white">{plan.price}</p><p className="text-[10px] uppercase tracking-wider text-gray-600">development</p></div>
-              <ul className="space-y-3 flex-1">{plan.features.map((feature) => <li key={feature} className="flex items-start gap-2 text-xs text-gray-400"><Check size={14} className="text-nhubx-glow-primary shrink-0 mt-0.5" />{feature}</li>)}</ul>
-              <div className="mt-6 pt-4 border-t border-white/[0.06]"><p className="text-[10px] uppercase tracking-wider text-gray-600">Hosting</p><p className="text-sm font-semibold mt-1">{plan.hosting}</p></div>
-              <button onClick={() => openPlanForm(plan)} className={`mt-5 inline-flex items-center justify-center gap-1 rounded-xl py-3 text-xs font-bold uppercase tracking-wider transition-colors ${plan.popular ? 'bg-nhubx-glow-primary hover:bg-nhubx-glow-hover' : 'bg-white/[0.05] hover:bg-white/[0.1]'}`}>Choose plan <ChevronRight size={14} /></button>
+              <p className="mt-3 text-sm leading-relaxed text-gray-300 xl:min-h-24">{plan.description}</p>
+              <div className="my-5"><span className="text-xs text-gray-400">LKR</span><p className="text-3xl font-bold tabular-nums text-white">{plan.price}</p><p className="text-sm text-gray-300">One-time development</p></div>
+              <ul className="flex-1 space-y-2.5">{plan.features.map((feature) => <li key={feature} className="flex items-start gap-2 text-sm text-gray-300"><Check size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-nhubx-glow-primary" />{feature}</li>)}</ul>
+              <div className="mt-6 border-t border-white/10 pt-4"><p className="text-sm text-gray-400">Annual hosting</p><p className="mt-1 text-sm font-semibold">{plan.hosting}</p></div>
+              <button type="button" onClick={() => openPlanForm(plan)} className={`site-action mt-5 ${plan.popular ? 'bg-nhubx-glow-primary hover:bg-nhubx-glow-hover' : 'bg-white/[0.07] hover:bg-white/[0.12]'}`}>Choose plan</button>
               <WhatsAppEnquiry planName={plan.name} source="pricing" className="mt-2 flex min-h-11 items-center justify-center gap-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white" />
             </article>
           ))}

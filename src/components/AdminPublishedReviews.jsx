@@ -3,19 +3,35 @@ import { orderButton, orderField, orderRequest } from '../orders';
 import { fetchProjects } from '../firebase';
 import { caseStudies } from '../projectCaseStudies';
 import ReviewCard from './ReviewCard';
+import AdminReviewEditor from './AdminReviewEditor';
 
 export default function AdminPublishedReviews() {
   const [page, setPage] = useState(null);
   const [projects, setProjects] = useState([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let active = true;
     orderRequest('reviewPublished').then((data) => { if (active) setPage(data); })
       .catch((err) => { if (active) setNotice({ text: err.message, error: true }); });
     fetchProjects().then((data) => { if (active) setProjects(data); });
     return () => { active = false; };
-  }, []);
+  }, [refresh]);
+
+  async function edit({ id, editVersion }, fields) {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const saved = await orderRequest('editPublishedReview', { id, editVersion, ...fields });
+      setPage((current) => ({ ...current, items: current.items.map((item) => item.id === id ? { ...item, ...saved } : item) }));
+      setNotice({ text: 'Published review updated.' });
+      return true;
+    } catch (err) {
+      setNotice({ text: err.message, error: true });
+      return false;
+    } finally { setBusy(false); }
+  }
 
   async function save(event, review) {
     event.preventDefault();
@@ -42,7 +58,8 @@ export default function AdminPublishedReviews() {
 
   return (
     <section className="max-w-4xl space-y-4" aria-labelledby="published-review-heading">
-      <div><h2 id="published-review-heading" className="font-bold">Published reviews</h2>
+      <div><div className="flex flex-wrap items-center justify-between gap-2"><h2 id="published-review-heading" className="font-bold">Published reviews</h2>
+        <button type="button" disabled={busy} onClick={() => { setPage(null); setNotice(null); setRefresh((count) => count + 1); }} className="rounded-lg border border-white/15 px-3 py-2 text-sm">Refresh reviews</button></div>
         <p className="mt-1 text-sm text-gray-400">Link a review only to the project it describes. Only link a project if the customer is comfortable being associated with it.</p>
       </div>
       {notice && <p role={notice.error ? 'alert' : 'status'} className={notice.error ? 'text-sm text-red-300' : 'text-sm text-gray-300'}>{notice.text}</p>}
@@ -52,6 +69,7 @@ export default function AdminPublishedReviews() {
         const linked = caseStudies.some((item) => 'case-' + item.id === review.projectKey) || projects.some((item) => 'catalog-' + item.id === review.projectKey);
         return <div key={review.id} className="space-y-3 rounded-2xl border border-white/10 bg-[#19191b] p-4">
           <ReviewCard review={review} expandable />
+          <AdminReviewEditor key={review.editVersion} review={review} disabled={busy} onSave={(fields) => edit(review, fields)} />
           <form onSubmit={(event) => save(event, review)} className="flex flex-wrap items-end gap-2">
             <label className="min-w-0 flex-1 text-sm font-semibold">Linked project
               <select name="project" key={review.projectKey} defaultValue={review.projectKey} className={orderField + ' mt-1'} disabled={busy}>
